@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Calendar, Search, Image as ImageIcon, X } from 'lucide-react';
+import { User, Calendar, Image as ImageIcon, X } from 'lucide-react';
 
 export interface PhotoItem {
   id: string;
@@ -29,7 +29,6 @@ export default function PhotoGrid({
   emptyMessage = 'No photos found',
   showUploaderInfo = true,
 }: Props) {
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoItem | null>(null);
 
   // Close the lightbox on Escape, matching the click-outside behaviour.
@@ -44,17 +43,9 @@ export default function PhotoGrid({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedPhoto]);
 
-  const filteredPhotos = photos.filter((photo) => {
-    const term = searchTerm.toLowerCase();
-    const captionMatch = photo.caption?.toLowerCase().includes(term);
-    const filenameMatch = photo.originalName.toLowerCase().includes(term);
-    const userMatch = photo.user?.username.toLowerCase().includes(term);
-    return captionMatch || filenameMatch || userMatch;
-  });
-
   // Photos arrive newest-first, so groups stay in that order.
   const groupedPhotos = Array.from(
-    filteredPhotos.reduce((groups, photo) => {
+    photos.reduce((groups, photo) => {
       const label = new Date(photo.createdAt).toLocaleDateString('en-US', {
         month: 'long',
         day: 'numeric',
@@ -81,32 +72,6 @@ export default function PhotoGrid({
 
   return (
     <div>
-      <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <div style={{ position: 'relative', width: '100%', maxWidth: '360px' }}>
-          <Search
-            size={18}
-            style={{
-              position: 'absolute',
-              left: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--text-muted)',
-            }}
-          />
-          <input
-            type="text"
-            className="form-input"
-            style={{ paddingLeft: '2.4rem' }}
-            placeholder="Search by caption or uploader..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          Showing {filteredPhotos.length} of {photos.length} photos
-        </span>
-      </div>
-
       {groupedPhotos.map(([dateLabel, groupPhotos]) => (
         <section key={dateLabel} className="photo-group">
           <h2 className="photo-group-date">
