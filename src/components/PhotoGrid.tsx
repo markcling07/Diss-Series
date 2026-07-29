@@ -1,8 +1,8 @@
 'use me';
 'use client';
 
-import React, { useState } from 'react';
-import { User, Calendar, Search, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Calendar, Search, Image as ImageIcon, X } from 'lucide-react';
 
 export interface PhotoItem {
   id: string;
@@ -30,6 +30,19 @@ export default function PhotoGrid({
   showUploaderInfo = true,
 }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPhoto, setSelectedPhoto] = useState<PhotoItem | null>(null);
+
+  // Close the lightbox on Escape, matching the click-outside behaviour.
+  useEffect(() => {
+    if (!selectedPhoto) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedPhoto(null);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedPhoto]);
 
   const filteredPhotos = photos.filter((photo) => {
     const term = searchTerm.toLowerCase();
@@ -104,7 +117,19 @@ export default function PhotoGrid({
           <div className="photo-grid">
             {groupPhotos.map((photo) => (
               <div key={photo.id} className="photo-card glass-panel">
-                <div className="photo-img-wrapper">
+                <div
+                  className="photo-img-wrapper"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`View ${photo.caption || photo.originalName}`}
+                  onClick={() => setSelectedPhoto(photo)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedPhoto(photo);
+                    }
+                  }}
+                >
                   <img
                     src={`/uploads/${photo.filename}`}
                     alt={photo.caption || photo.originalName}
@@ -128,6 +153,54 @@ export default function PhotoGrid({
           </div>
         </section>
       ))}
+
+      {selectedPhoto && (
+        <div className="modal-overlay" onClick={() => setSelectedPhoto(null)}>
+          <div className="lightbox-card" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="lightbox-close"
+              onClick={() => setSelectedPhoto(null)}
+              aria-label="Close photo"
+            >
+              <X size={20} />
+            </button>
+
+            <img
+              src={`/uploads/${selectedPhoto.filename}`}
+              alt={selectedPhoto.caption || selectedPhoto.originalName}
+              className="lightbox-img"
+            />
+
+            <div className="lightbox-info">
+              {selectedPhoto.caption ? (
+                <p className="lightbox-caption">{selectedPhoto.caption}</p>
+              ) : (
+                <p className="lightbox-caption lightbox-caption-empty">No caption</p>
+              )}
+
+              <div className="lightbox-meta">
+                <span>
+                  <Calendar size={13} />
+                  {new Date(selectedPhoto.createdAt).toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+
+                {showUploaderInfo && (
+                  <span>
+                    <User size={13} />
+                    {selectedPhoto.user ? `@${selectedPhoto.user.username}` : 'Anonymous'}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
