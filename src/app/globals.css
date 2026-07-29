@@ -244,13 +244,14 @@ body {
 /* Plain Cards and Grids */
 .photo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr));
+  gap: 12px;
 }
 
 .photo-card {
-  border: 1px solid #ccc;
-  padding: 10px;
+  border: none;
+  padding: 0;
+  margin: 0;
   background: #fff;
 }
 
@@ -267,25 +268,33 @@ body {
   object-fit: cover;
 }
 
-.photo-body {
-  padding-top: 10px;
+.photo-group {
+  margin-bottom: 2rem;
 }
 
-.photo-caption {
-  font-weight: bold;
-  margin-bottom: 5px;
+.photo-group-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #eee;
+}
+
+.photo-body {
+  padding-top: 6px;
 }
 
 .photo-meta {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
-  font-size: 0.8rem;
+  gap: 5px;
+  font-size: 0.7rem;
   color: #555;
-  border-top: 1px solid #eee;
-  padding-top: 5px;
-  margin-top: 5px;
 }
 
 /* Plain Badges */

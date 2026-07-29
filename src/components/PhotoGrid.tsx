@@ -39,6 +39,24 @@ export default function PhotoGrid({
     return captionMatch || filenameMatch || userMatch;
   });
 
+  // Photos arrive newest-first, so groups stay in that order.
+  const groupedPhotos = Array.from(
+    filteredPhotos.reduce((groups, photo) => {
+      const label = new Date(photo.createdAt).toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      });
+      const existing = groups.get(label);
+      if (existing) {
+        existing.push(photo);
+      } else {
+        groups.set(label, [photo]);
+      }
+      return groups;
+    }, new Map<string, PhotoItem[]>())
+  );
+
   if (photos.length === 0) {
     return (
       <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -76,55 +94,40 @@ export default function PhotoGrid({
         </span>
       </div>
 
-      <div className="photo-grid">
-        {filteredPhotos.map((photo) => {
-          const uploaderName = photo.user ? `@${photo.user.username}` : 'Anonymous';
-          const formattedDate = new Date(photo.createdAt).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          });
+      {groupedPhotos.map(([dateLabel, groupPhotos]) => (
+        <section key={dateLabel} className="photo-group">
+          <h2 className="photo-group-date">
+            <Calendar size={14} />
+            {dateLabel}
+          </h2>
 
-          return (
-            <div key={photo.id} className="photo-card glass-panel">
-              <div className="photo-img-wrapper">
-                <img
-                  src={`/uploads/${photo.filename}`}
-                  alt={photo.caption || photo.originalName}
-                  className="photo-img"
-                  loading="lazy"
-                />
-              </div>
-
-              <div className="photo-body">
-                {photo.caption ? (
-                  <p className="photo-caption">{photo.caption}</p>
-                ) : (
-                  <p className="photo-caption" style={{ color: 'var(--text-dark)', fontStyle: 'italic' }}>
-                    No caption
-                  </p>
-                )}
-
-                <div className="photo-meta">
-                  {showUploaderInfo && (
-                    <span className={`badge ${photo.user ? 'badge-user' : 'badge-guest'}`}>
-                      <User size={12} />
-                      {uploaderName}
-                    </span>
-                  )}
-
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginLeft: 'auto' }}>
-                    <Calendar size={12} />
-                    {formattedDate}
-                  </span>
+          <div className="photo-grid">
+            {groupPhotos.map((photo) => (
+              <div key={photo.id} className="photo-card glass-panel">
+                <div className="photo-img-wrapper">
+                  <img
+                    src={`/uploads/${photo.filename}`}
+                    alt={photo.caption || photo.originalName}
+                    className="photo-img"
+                    loading="lazy"
+                  />
                 </div>
+
+                {showUploaderInfo && (
+                  <div className="photo-body">
+                    <div className="photo-meta">
+                      <span className={`badge ${photo.user ? 'badge-user' : 'badge-guest'}`}>
+                        <User size={12} />
+                        {photo.user ? `@${photo.user.username}` : 'Anonymous'}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          );
-        })}
-      </div>
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
