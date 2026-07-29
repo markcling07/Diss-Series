@@ -60,13 +60,13 @@ export default function ProfilePage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div className="page-header">
         <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <h1 className="page-title">
             <History style={{ color: 'var(--primary)' }} />
             My Upload History
           </h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+          <p className="page-subtitle">
             All photos uploaded under your account ({photos.length} total)
           </p>
         </div>

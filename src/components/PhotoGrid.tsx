@@ -50,7 +50,7 @@ export default function PhotoGrid({
 
   return (
     <div>
-      <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ position: 'relative', width: '100%', maxWidth: '360px' }}>
           <Search
             size={18}
