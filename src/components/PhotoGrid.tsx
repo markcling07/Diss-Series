@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Calendar, Image as ImageIcon, X } from 'lucide-react';
+import { User, Calendar, Image as ImageIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface PhotoItem {
   id: string;
@@ -29,19 +29,30 @@ export default function PhotoGrid({
   emptyMessage = 'No photos found',
   showUploaderInfo = true,
 }: Props) {
-  const [selectedPhoto, setSelectedPhoto] = useState<PhotoItem | null>(null);
+  // Tracked by index so the lightbox can step through `photos` in order.
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  // Close the lightbox on Escape, matching the click-outside behaviour.
+  const selectedPhoto = selectedIndex === null ? null : photos[selectedIndex];
+  const hasPrev = selectedIndex !== null && selectedIndex > 0;
+  const hasNext = selectedIndex !== null && selectedIndex < photos.length - 1;
+
+  const goPrev = () => setSelectedIndex((i) => (i !== null && i > 0 ? i - 1 : i));
+  const goNext = () =>
+    setSelectedIndex((i) => (i !== null && i < photos.length - 1 ? i + 1 : i));
+
+  // Escape closes; arrow keys step between photos.
   useEffect(() => {
-    if (!selectedPhoto) return;
+    if (selectedIndex === null) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSelectedPhoto(null);
+      if (e.key === 'Escape') setSelectedIndex(null);
+      if (e.key === 'ArrowLeft') goPrev();
+      if (e.key === 'ArrowRight') goNext();
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedPhoto]);
+  }, [selectedIndex, photos.length]);
 
   // Photos arrive newest-first, so groups stay in that order.
   const groupedPhotos = Array.from(
@@ -87,11 +98,11 @@ export default function PhotoGrid({
                   role="button"
                   tabIndex={0}
                   aria-label={`View ${photo.caption || photo.originalName}`}
-                  onClick={() => setSelectedPhoto(photo)}
+                  onClick={() => setSelectedIndex(photos.indexOf(photo))}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      setSelectedPhoto(photo);
+                      setSelectedIndex(photos.indexOf(photo));
                     }
                   }}
                 >
@@ -120,21 +131,43 @@ export default function PhotoGrid({
       ))}
 
       {selectedPhoto && (
-        <div className="modal-overlay" onClick={() => setSelectedPhoto(null)}>
+        <div className="modal-overlay" onClick={() => setSelectedIndex(null)}>
           <div className="lightbox-card" onClick={(e) => e.stopPropagation()}>
             <button
               className="lightbox-close"
-              onClick={() => setSelectedPhoto(null)}
+              onClick={() => setSelectedIndex(null)}
               aria-label="Close photo"
             >
               <X size={20} />
             </button>
 
-            <img
-              src={`/uploads/${selectedPhoto.filename}`}
-              alt={selectedPhoto.caption || selectedPhoto.originalName}
-              className="lightbox-img"
-            />
+            <div className="lightbox-stage">
+              <img
+                src={`/uploads/${selectedPhoto.filename}`}
+                alt={selectedPhoto.caption || selectedPhoto.originalName}
+                className="lightbox-img"
+              />
+
+              {hasPrev && (
+                <button
+                  className="lightbox-nav lightbox-nav-prev"
+                  onClick={goPrev}
+                  aria-label="Previous photo"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+              )}
+
+              {hasNext && (
+                <button
+                  className="lightbox-nav lightbox-nav-next"
+                  onClick={goNext}
+                  aria-label="Next photo"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              )}
+            </div>
 
             <div className="lightbox-info">
               {selectedPhoto.caption ? (
@@ -161,6 +194,10 @@ export default function PhotoGrid({
                     {selectedPhoto.user ? `@${selectedPhoto.user.username}` : 'Anonymous'}
                   </span>
                 )}
+
+                <span className="lightbox-counter">
+                  {(selectedIndex ?? 0) + 1} of {photos.length}
+                </span>
               </div>
             </div>
           </div>
