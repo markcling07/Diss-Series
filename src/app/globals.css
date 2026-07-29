@@ -49,7 +49,7 @@ body {
 }
 
 .nav-link {
-  color: #0066cc;
+  color: #cc0000;
   text-decoration: none;
 }
 
@@ -75,13 +75,13 @@ body {
 }
 
 .btn-primary {
-  background: #0066cc;
+  background: #cc0000;
   color: #fff;
-  border-color: #0052a3;
+  border-color: #a30000;
 }
 
 .btn-primary:hover {
-  background: #0052a3;
+  background: #a30000;
 }
 
 .btn-secondary {
@@ -221,10 +221,11 @@ body {
   border: 1px solid #ccc;
 }
 
-.badge-user { background: #e6f2ff; border-color: #b3d7ff; color: #004085; }
-.badge-guest { background: #f8f9fa; border-color: #ddd; color: #383d41; }
-.badge-admin { background: #f3e5f5; border-color: #ce93d8; color: #4a148c; }
-.badge-superadmin { background: #fbe9e7; border-color: #ffab91; color: #bf360c; }
+/* Red family, escalating with privilege level */
+.badge-guest { background: #fdf5f5; border-color: #ecd5d5; color: #7a5c5c; }
+.badge-user { background: #fdecec; border-color: #f3b0b0; color: #a30000; }
+.badge-admin { background: #f9c9c9; border-color: #e07a7a; color: #7a0000; }
+.badge-superadmin { background: #cc0000; border-color: #a30000; color: #ffffff; }
 
 /* Plain Modal */
 .modal-overlay {
