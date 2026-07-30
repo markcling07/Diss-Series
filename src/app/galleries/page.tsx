@@ -113,15 +113,11 @@ export default function GalleriesPage() {
 
   return (
     <div>
+      {/* The label is the page's h1 even though it's set small — with the
+          headline gone, something still has to name the page for anyone
+          navigating by headings. */}
       <div className="page-header">
-        <div>
-          <span className="eyebrow">Galleries</span>
-          <h1 className="page-title">Collect from everyone.</h1>
-          <p className="page-subtitle">
-            Create a gallery, then share its link or QR code. Anyone who opens it can add
-            photos without signing up.
-          </p>
-        </div>
+        <h1 className="eyebrow">Galleries</h1>
       </div>
 
       <div className="panel">
