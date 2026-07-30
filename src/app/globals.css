@@ -813,8 +813,7 @@ a:focus-visible {
   position: relative;
 }
 
-/* The print: a white margin inside a hairline, the way a photograph sits on a
-   contact sheet. */
+/* The print: a white margin, the way a photograph sits on a contact sheet. */
 .photo-img-wrapper {
   position: relative;
   display: block;
@@ -822,7 +821,6 @@ a:focus-visible {
   aspect-ratio: 1 / 1;
   padding: 5px;
   background: #fff;
-  border: 1px solid var(--rule);
   cursor: pointer;
   overflow: hidden;
 }
@@ -833,10 +831,6 @@ a:focus-visible {
   object-fit: cover;
   background: var(--paper-sunk);
   transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.3, 1);
-}
-
-.photo-img-wrapper:hover {
-  border-color: var(--rule-strong);
 }
 
 .photo-img-wrapper:hover .photo-img {
@@ -1479,8 +1473,8 @@ a:focus-visible {
 
   /* Exactly five per row on phones. A fixed count rather than auto-fill, so the
      number of columns can't drift with screen width — thumbnails scale
-     instead. At this size the print margin would swallow the image, so the
-     frames go flush. */
+     instead. At this size the print margin would swallow the image, so it
+     goes flush. */
   .photo-grid {
     grid-template-columns: repeat(5, 1fr);
     gap: 4px;
@@ -1488,7 +1482,6 @@ a:focus-visible {
 
   .photo-img-wrapper {
     padding: 0;
-    border-color: var(--rule);
   }
 
   .frame-index {
