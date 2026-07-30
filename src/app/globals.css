@@ -210,18 +210,134 @@ a {
   border-bottom-color: var(--safelight);
 }
 
+/* Signed out: two separate calls to action, so they stay separate. */
 .nav-session {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
 }
 
-.nav-user {
+/* Signed in: everything about the account lives behind one icon. */
+.nav-account {
+  position: relative;
+}
+
+/* A monogram until profile photos exist. Circular so it reads as a person
+   rather than another button in the row. */
+.nav-avatar {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-full);
+  background: #fff;
+  font-family: var(--mono);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.nav-avatar:hover,
+.nav-avatar[aria-expanded='true'] {
+  border-color: var(--ink);
+  background: var(--paper-sunk);
+}
+
+.nav-avatar:focus-visible {
+  outline: 2px solid var(--safelight);
+  outline-offset: 2px;
+}
+
+.nav-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 100;
+  min-width: 220px;
+  max-width: calc(100vw - 2rem);
+  background: #fff;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 28px rgba(23, 22, 27, 0.12);
+  overflow: hidden;
+}
+
+.nav-menu-head {
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper-sunk);
+}
+
+.nav-menu-name {
+  display: block;
   font-family: var(--mono);
   font-size: var(--t-xs);
   letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.nav-menu-email {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--t-xs);
   color: var(--muted);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+}
+
+.nav-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border: none;
+  background: none;
+  font-family: var(--body);
+  font-size: var(--t-sm);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.nav-menu-item:hover:not(:disabled) {
+  background: var(--paper-sunk);
+}
+
+.nav-menu-item:focus-visible {
+  outline: 2px solid var(--safelight);
+  outline-offset: -2px;
+}
+
+.nav-menu-item:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+/* Marks the item as not built yet. Better than a link that goes nowhere. */
+.nav-menu-soon {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: var(--t-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 1px 4px;
+}
+
+.nav-menu-sep {
+  border-top: 1px solid var(--rule);
+}
+
+.nav-menu-item-exit:hover:not(:disabled) {
+  background: var(--safelight-wash);
+  color: var(--safelight-deep);
 }
 
 /* --- Footer -------------------------------------------------------------- */
@@ -1314,6 +1430,13 @@ a:focus-visible {
   .nav-links {
     width: 100%;
     gap: var(--sp-3) var(--sp-4);
+  }
+
+  /* The masthead stacks here, so the avatar can end up near the left edge —
+     anchor the menu to its left or it opens off-screen. */
+  .nav-menu {
+    left: 0;
+    right: auto;
   }
 
   .panel {

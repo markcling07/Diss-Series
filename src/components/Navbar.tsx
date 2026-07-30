@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { ImagePlus, LogOut } from 'lucide-react';
 
 interface AuthUser {
   id: string;
@@ -17,6 +17,8 @@ export default function Navbar() {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
 
   const fetchUser = async () => {
     try {
@@ -34,7 +36,36 @@ export default function Navbar() {
     fetchUser();
   }, [pathname]);
 
+  // Close on a click anywhere else, or on Escape. Both listeners only exist
+  // while the menu is open.
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const handlePointer = (e: MouseEvent) => {
+      if (!accountRef.current?.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+
+    document.addEventListener('mousedown', handlePointer);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handlePointer);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [menuOpen]);
+
+  // The menu shouldn't survive a page change.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
   const handleLogout = async () => {
+    setMenuOpen(false);
     await fetch('/api/auth/logout', { method: 'POST' });
     setUser(null);
     router.push('/');
@@ -84,16 +115,54 @@ export default function Navbar() {
 
           {!loading &&
             (user ? (
-              <div className="nav-session">
-                <span className="nav-user">@{user.username}</span>
+              <div className="nav-account" ref={accountRef}>
+                {/* No avatar image exists yet, so the icon is a monogram of the
+                    first letter of the username. Once profile photos are real
+                    this is where the image goes. */}
                 <button
-                  onClick={handleLogout}
-                  className="btn btn-secondary btn-sm"
-                  title="Sign out"
+                  type="button"
+                  className="nav-avatar"
+                  onClick={() => setMenuOpen((open) => !open)}
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                  aria-label={`Account menu for @${user.username}`}
                 >
-                  <LogOut size={14} />
-                  <span>Sign out</span>
+                  {user.username.charAt(0).toUpperCase()}
                 </button>
+
+                {menuOpen && (
+                  <div className="nav-menu" role="menu">
+                    <div className="nav-menu-head">
+                      <span className="nav-menu-name">@{user.username}</span>
+                      <span className="nav-menu-email">{user.email}</span>
+                    </div>
+
+                    {/* Placeholder — nothing is wired up behind this yet, so it
+                        says so rather than pretending to work. */}
+                    <button
+                      type="button"
+                      className="nav-menu-item"
+                      role="menuitem"
+                      disabled
+                    >
+                      <ImagePlus size={14} />
+                      <span>Upload profile photo</span>
+                      <span className="nav-menu-soon">Soon</span>
+                    </button>
+
+                    <div className="nav-menu-sep" />
+
+                    <button
+                      type="button"
+                      className="nav-menu-item nav-menu-item-exit"
+                      role="menuitem"
+                      onClick={handleLogout}
+                    >
+                      <LogOut size={14} />
+                      <span>Sign out</span>
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="nav-session">
