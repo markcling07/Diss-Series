@@ -6,6 +6,13 @@
   box-sizing: border-box;
 }
 
+/* Everything is sized in rem, so this one value scales all text down slightly
+   on both desktop and mobile. A percentage rather than a px value, so a reader
+   who has raised their browser's default font size still gets it honoured. */
+html {
+  font-size: 93.75%; /* 15px when the browser default is 16px */
+}
+
 :root {
   --text-main: #000000;
   --text-dark: #333333;
@@ -64,7 +71,8 @@ body {
   text-align: center;
   padding: 1.25rem 1rem;
   color: var(--text-muted);
-  font-size: 0.7rem;
+  /* 0.75rem rather than 0.7rem so it stays ~11px after the root size drop. */
+  font-size: 0.75rem;
 }
 
 /* Plain Navigation */
