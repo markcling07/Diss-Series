@@ -5,6 +5,13 @@ import { normalizeCode } from '@/lib/gallery';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+import sharp from 'sharp';
+
+// Grid thumbnails render at most ~184px, so 400px covers high-DPI screens with
+// room to spare. WebP at this size turns a multi-megabyte phone photo into a
+// few KB, which is the difference between a gallery loading and appearing broken.
+const THUMB_MAX_PX = 400;
+const THUMB_QUALITY = 80;
 
 export async function POST(req: Request) {
   try {
@@ -49,9 +56,10 @@ export async function POST(req: Request) {
       galleryId = gallery.id;
     }
 
-    // Prepare upload directory
+    // Prepare upload directories
     const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-    await mkdir(uploadsDir, { recursive: true });
+    const thumbsDir = path.join(uploadsDir, 'thumbs');
+    await mkdir(thumbsDir, { recursive: true });
 
     // Generate unique filename
     const ext = path.extname(file.name) || `.${file.type.split('/')[1]}`;
@@ -63,10 +71,27 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(await file.arrayBuffer());
     await writeFile(filePath, buffer);
 
+    // Derive a small WebP thumbnail for the grid. A failure here must not fail
+    // the upload — the original is already safely on disk, and the grid falls
+    // back to it when thumbFilename is null.
+    let thumbFilename: string | null = null;
+    try {
+      const generated = `${path.basename(filename, ext)}.webp`;
+      await sharp(buffer)
+        .rotate() // honour EXIF orientation, or phone photos come out sideways
+        .resize(THUMB_MAX_PX, THUMB_MAX_PX, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: THUMB_QUALITY })
+        .toFile(path.join(thumbsDir, generated));
+      thumbFilename = `thumbs/${generated}`;
+    } catch (thumbError) {
+      console.error('Thumbnail generation failed, serving original instead:', thumbError);
+    }
+
     // Save database record
     const photo = await prisma.photo.create({
       data: {
         filename,
+        thumbFilename,
         originalName: file.name,
         caption: caption?.trim() || null,
         mimeType: file.type,

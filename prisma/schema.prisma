@@ -33,6 +33,9 @@ model Gallery {
 model Photo {
   id           String   @id @default(cuid())
   filename     String
+  // Small WebP copy used by the grid. Nullable so photos uploaded before
+  // thumbnails existed still render (the grid falls back to the original).
+  thumbFilename String?
   originalName String
   caption      String?
   mimeType     String

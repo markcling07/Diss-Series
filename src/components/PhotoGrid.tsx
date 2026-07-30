@@ -7,6 +7,9 @@ import { User, Calendar, Image as ImageIcon, X, ChevronLeft, ChevronRight } from
 export interface PhotoItem {
   id: string;
   filename: string;
+  // Small WebP copy for the grid. Null for photos uploaded before thumbnails
+  // existed, in which case the grid falls back to the full-size original.
+  thumbFilename?: string | null;
   originalName: string;
   caption?: string | null;
   mimeType: string;
@@ -108,7 +111,7 @@ export default function PhotoGrid({
                   }}
                 >
                   <img
-                    src={`/uploads/${photo.filename}`}
+                    src={`/uploads/${photo.thumbFilename || photo.filename}`}
                     alt={photo.caption || photo.originalName}
                     className="photo-img"
                     loading="lazy"
