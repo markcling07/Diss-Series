@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Shield, ShieldAlert, UserCheck, Check, AlertCircle } from 'lucide-react';
+import { Shield, ShieldAlert, UserCheck, AlertCircle } from 'lucide-react';
 
 export interface UserItem {
   id: string;
@@ -49,10 +49,10 @@ export default function AdminUserTable({ users, currentUserId, onUserRoleUpdated
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '1.5rem' }}>
+    <div className="panel">
       {error && (
-        <div className="alert-error" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <AlertCircle size={18} />
+        <div className="alert-error">
+          <AlertCircle size={16} />
           <span>{error}</span>
         </div>
       )}
@@ -63,9 +63,9 @@ export default function AdminUserTable({ users, currentUserId, onUserRoleUpdated
             <tr>
               <th>User</th>
               <th>Email</th>
-              <th>Uploaded Photos</th>
-              <th>Current Role</th>
-              <th>Grant / Change Access</th>
+              <th>Photos</th>
+              <th>Role</th>
+              <th>Access</th>
             </tr>
           </thead>
           <tbody>
@@ -74,12 +74,11 @@ export default function AdminUserTable({ users, currentUserId, onUserRoleUpdated
               return (
                 <tr key={user.id}>
                   <td>
-                    <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>
-                      @{user.username} {isSelf && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>(You)</span>}
-                    </div>
+                    <span className="table-name">@{user.username}</span>
+                    {isSelf && <span className="mono-meta"> (you)</span>}
                   </td>
                   <td>{user.email}</td>
-                  <td>{user._count?.photos ?? 0} photos</td>
+                  <td>{user._count?.photos ?? 0}</td>
                   <td>
                     <span
                       className={`badge ${
@@ -90,39 +89,32 @@ export default function AdminUserTable({ users, currentUserId, onUserRoleUpdated
                           : 'badge-user'
                       }`}
                     >
-                      {user.role === 'SUPER_ADMIN' && <ShieldAlert size={12} />}
-                      {user.role === 'ADMIN' && <Shield size={12} />}
-                      {user.role === 'USER' && <UserCheck size={12} />}
-                      {user.role}
+                      {user.role === 'SUPER_ADMIN' && <ShieldAlert size={11} />}
+                      {user.role === 'ADMIN' && <Shield size={11} />}
+                      {user.role === 'USER' && <UserCheck size={11} />}
+                      {user.role.replace('_', ' ')}
                     </span>
                   </td>
                   <td>
                     {isSelf ? (
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-dark)' }}>SuperAdmin (Primary)</span>
+                      <span className="mono-meta">Primary account</span>
+                    ) : user.role === 'ADMIN' ? (
+                      <button
+                        disabled={updatingId === user.id}
+                        onClick={() => handleRoleChange(user.id, 'USER')}
+                        className="btn btn-secondary btn-sm"
+                      >
+                        Revoke admin
+                      </button>
                     ) : (
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        {user.role !== 'ADMIN' && (
-                          <button
-                            disabled={updatingId === user.id}
-                            onClick={() => handleRoleChange(user.id, 'ADMIN')}
-                            className="btn btn-secondary btn-sm"
-                            style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
-                          >
-                            <Shield size={14} />
-                            Make Admin
-                          </button>
-                        )}
-
-                        {user.role === 'ADMIN' && (
-                          <button
-                            disabled={updatingId === user.id}
-                            onClick={() => handleRoleChange(user.id, 'USER')}
-                            className="btn btn-secondary btn-sm"
-                          >
-                            Revoke Admin
-                          </button>
-                        )}
-                      </div>
+                      <button
+                        disabled={updatingId === user.id}
+                        onClick={() => handleRoleChange(user.id, 'ADMIN')}
+                        className="btn btn-secondary btn-sm"
+                      >
+                        <Shield size={13} />
+                        Make admin
+                      </button>
                     )}
                   </td>
                 </tr>

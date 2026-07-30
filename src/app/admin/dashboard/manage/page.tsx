@@ -1,9 +1,8 @@
-'use me';
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import AdminUserTable, { UserItem } from '@/components/AdminUserTable';
-import { Users, ShieldAlert, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ManageAdminsPage() {
@@ -18,7 +17,7 @@ export default function ManageAdminsPage() {
       const meData = await meRes.json();
 
       if (!meData.user || meData.user.role !== 'SUPER_ADMIN') {
-        throw new Error('Access denied: Only SuperAdmin can manage administrator accounts.');
+        throw new Error('Only a super admin can change who has administrator access.');
       }
 
       setCurrentUserId(meData.user.id);
@@ -44,56 +43,45 @@ export default function ManageAdminsPage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '5rem 1rem', color: 'var(--text-muted)' }}>
-        <Loader2 size={36} className="animate-spin" style={{ margin: '0 auto 1rem', color: 'var(--primary)' }} />
-        <p>Loading User Permissions Management...</p>
+      <div className="state">
+        <Loader2 size={28} className="animate-spin" />
+        <p className="state-mono" style={{ marginTop: '1rem' }}>
+          Loading accounts
+        </p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ maxWidth: '500px', margin: '4rem auto', textAlign: 'center' }}>
-        <div className="glass-panel" style={{ padding: '2.5rem' }}>
-          <AlertCircle size={40} style={{ color: 'var(--danger)', margin: '0 auto 1rem' }} />
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem' }}>SuperAdmin Access Required</h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-            {error}
-          </p>
-          <Link href="/admin/dashboard" className="btn btn-primary">
-            Back to Dashboard
-          </Link>
-        </div>
+      <div className="state-narrow">
+        <span className="eyebrow">Super admin only</span>
+        <h1 className="state-title">You can&rsquo;t open this page.</h1>
+        <p className="state-text">{error}</p>
+        <Link href="/admin/dashboard" className="btn btn-primary">
+          Back to the dashboard
+        </Link>
       </div>
     );
   }
 
   return (
     <div>
-      <div style={{ marginBottom: '2rem' }}>
-        <Link
-          href="/admin/dashboard"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            color: 'var(--text-muted)',
-            textDecoration: 'none',
-            fontSize: '0.9rem',
-            marginBottom: '1rem',
-          }}
-        >
-          <ArrowLeft size={16} />
-          Back to Photo Dashboard
+      <div style={{ marginBottom: '1rem' }}>
+        <Link href="/admin/dashboard" className="link-quiet">
+          <ArrowLeft size={14} />
+          Back to photos
         </Link>
+      </div>
 
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <ShieldAlert style={{ color: 'var(--primary)' }} />
-          Manage Admin Access
-        </h1>
-        <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-          As SuperAdmin, you can grant or revoke administrator access for registered accounts.
-        </p>
+      <div className="page-header">
+        <div>
+          <span className="eyebrow">Access</span>
+          <h1 className="page-title">Who can administer.</h1>
+          <p className="page-subtitle">
+            Grant or revoke administrator access for any registered account.
+          </p>
+        </div>
       </div>
 
       <AdminUserTable

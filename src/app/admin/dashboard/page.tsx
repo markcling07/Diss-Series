@@ -1,9 +1,8 @@
-'use me';
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import PhotoGrid, { PhotoItem } from '@/components/PhotoGrid';
-import { Shield, Users, Loader2, AlertCircle, Eye } from 'lucide-react';
+import { Users, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface UserMeta {
@@ -46,26 +45,24 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '5rem 1rem', color: 'var(--text-muted)' }}>
-        <Loader2 size={36} className="animate-spin" style={{ margin: '0 auto 1rem', color: 'var(--primary)' }} />
-        <p>Loading Admin Dashboard...</p>
+      <div className="state">
+        <Loader2 size={28} className="animate-spin" />
+        <p className="state-mono" style={{ marginTop: '1rem' }}>
+          Loading dashboard
+        </p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ maxWidth: '500px', margin: '4rem auto', textAlign: 'center' }}>
-        <div className="glass-panel" style={{ padding: '2.5rem' }}>
-          <AlertCircle size={40} style={{ color: 'var(--danger)', margin: '0 auto 1rem' }} />
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem' }}>Access Denied</h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-            {error}
-          </p>
-          <Link href="/admin" className="btn btn-primary">
-            Go to Admin Login
-          </Link>
-        </div>
+      <div className="state-narrow">
+        <span className="eyebrow">Access denied</span>
+        <h1 className="state-title">You can&rsquo;t open this page.</h1>
+        <p className="state-text">{error}</p>
+        <Link href="/admin" className="btn btn-primary">
+          Go to admin sign in
+        </Link>
       </div>
     );
   }
@@ -75,54 +72,46 @@ export default function AdminDashboardPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div className="page-header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <h1 style={{ fontSize: '2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <Shield style={{ color: 'var(--primary)' }} />
-              Admin Photo Dashboard
-            </h1>
-            {currentUser && (
-              <span className={`badge ${currentUser.role === 'SUPER_ADMIN' ? 'badge-superadmin' : 'badge-admin'}`}>
-                {currentUser.role}
-              </span>
-            )}
-          </div>
-          <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-            Viewing all uploaded pictures submitted across the platform (View-Only Mode)
+          <span className="eyebrow">
+            Admin{currentUser ? ` · ${currentUser.role.replace('_', ' ').toLowerCase()}` : ''}
+          </span>
+          <h1 className="page-title">Every photo on the platform.</h1>
+          <p className="page-subtitle">
+            Read-only view of everything uploaded, newest first.
           </p>
         </div>
 
         {currentUser?.role === 'SUPER_ADMIN' && (
-          <Link href="/admin/dashboard/manage" className="btn btn-secondary" style={{ borderColor: 'var(--primary)' }}>
-            <Users size={18} style={{ color: 'var(--primary)' }} />
-            <span>Manage Admins</span>
+          <Link href="/admin/dashboard/manage" className="btn btn-secondary">
+            <Users size={16} />
+            <span>Manage admins</span>
           </Link>
         )}
       </div>
 
-      {/* Stats summary bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-        <div className="glass-panel" style={{ padding: '1.25rem', textAlign: 'center' }}>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Total Photos Uploaded</span>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.25rem' }}>{photos.length}</div>
+      <div className="stat-row">
+        <div className="stat">
+          <span className="stat-label">Total photos</span>
+          <div className="stat-value">{photos.length}</div>
         </div>
 
-        <div className="glass-panel" style={{ padding: '1.25rem', textAlign: 'center' }}>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Registered User Uploads</span>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--primary)', marginTop: '0.25rem' }}>{registeredUploads}</div>
+        <div className="stat">
+          <span className="stat-label">From accounts</span>
+          <div className="stat-value stat-value-accent">{registeredUploads}</div>
         </div>
 
-        <div className="glass-panel" style={{ padding: '1.25rem', textAlign: 'center' }}>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Guest Uploads</span>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-muted)', marginTop: '0.25rem' }}>{guestUploads}</div>
+        <div className="stat">
+          <span className="stat-label">From guests</span>
+          <div className="stat-value">{guestUploads}</div>
         </div>
       </div>
 
       <PhotoGrid
         photos={photos}
         showUploaderInfo={true}
-        emptyMessage="No photos have been uploaded to the database yet."
+        emptyMessage="Nobody has uploaded a photo yet."
       />
     </div>
   );

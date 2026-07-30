@@ -14,71 +14,39 @@ export default function PostUploadModal({ isOpen, onClose }: Props) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card glass-panel" onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              padding: '0.25rem',
-            }}
-          >
-            <X size={20} />
-          </button>
-        </div>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Close">
+          <X size={18} />
+        </button>
 
-        <div className="modal-icon">
-          <UserPlus size={32} />
-        </div>
+        <span className="eyebrow">Uploaded as guest</span>
 
-        <h3 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-          Photo Uploaded Successfully! 🎉
-        </h3>
+        <h3 className="modal-title">Your photo is up.</h3>
 
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.25rem', lineHeight: 1.5 }}>
-          You uploaded this photo as a <strong style={{ color: 'var(--text-main)' }}>Guest</strong>.
-          Without an account, <strong style={{ color: 'var(--danger)' }}>you cannot view your upload history</strong> after leaving this page.
+        <p className="modal-text">
+          You uploaded without an account, so this photo won&apos;t appear in any upload
+          history once you leave the page. It stays in the archive — you just won&apos;t
+          be able to find it again from here.
         </p>
 
-        <div
-          style={{
-            background: 'rgba(245, 158, 11, 0.1)',
-            border: '1px solid rgba(245, 158, 11, 0.3)',
-            borderRadius: 'var(--radius-sm)',
-            padding: '0.75rem 1rem',
-            marginBottom: '1.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.6rem',
-            fontSize: '0.85rem',
-            color: '#92400e',
-            textAlign: 'left',
-          }}
-        >
-          <AlertCircle size={20} style={{ flexShrink: 0 }} />
-          <span>Creating a free account lets you track, manage, and view all your uploaded photos anytime!</span>
+        <div className="notice">
+          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+          <span>An account keeps every photo you add in one list you can come back to.</span>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <Link href="/register" className="btn btn-primary" style={{ width: '100%' }}>
-            <UserPlus size={18} />
-            <span>Create Free Account</span>
+        <div className="modal-actions">
+          <Link href="/register" className="btn btn-primary btn-block">
+            <UserPlus size={16} />
+            <span>Create an account</span>
           </Link>
 
-          <Link href="/login" className="btn btn-secondary" style={{ width: '100%' }}>
-            <LogIn size={18} />
-            <span>Already have an account? Sign In</span>
+          <Link href="/login" className="btn btn-secondary btn-block">
+            <LogIn size={16} />
+            <span>Sign in</span>
           </Link>
 
-          <button
-            onClick={onClose}
-            className="btn btn-secondary"
-            style={{ width: '100%', opacity: 0.7, fontSize: '0.85rem' }}
-          >
-            Continue as Guest (No History)
+          <button onClick={onClose} className="btn btn-secondary btn-block">
+            Keep going as a guest
           </button>
         </div>
       </div>

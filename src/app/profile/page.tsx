@@ -1,9 +1,8 @@
-'use me';
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import PhotoGrid, { PhotoItem } from '@/components/PhotoGrid';
-import { History, Loader2, Upload, AlertCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -34,26 +33,24 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '5rem 1rem', color: 'var(--text-muted)' }}>
-        <Loader2 size={36} className="animate-spin" style={{ margin: '0 auto 1rem', color: 'var(--primary)' }} />
-        <p>Loading your photo history...</p>
+      <div className="state">
+        <Loader2 size={28} className="animate-spin" />
+        <p className="state-mono" style={{ marginTop: '1rem' }}>
+          Loading your uploads
+        </p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ maxWidth: '500px', margin: '4rem auto', textAlign: 'center' }}>
-        <div className="glass-panel" style={{ padding: '2.5rem' }}>
-          <AlertCircle size={40} style={{ color: 'var(--danger)', margin: '0 auto 1rem' }} />
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem' }}>Access Restricted</h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-            Please sign in to your account to view your upload history gallery.
-          </p>
-          <Link href="/login" className="btn btn-primary">
-            Sign In Now
-          </Link>
-        </div>
+      <div className="state-narrow">
+        <span className="eyebrow">Sign in required</span>
+        <h1 className="state-title">This list is yours alone.</h1>
+        <p className="state-text">Sign in to see everything you&apos;ve uploaded.</p>
+        <Link href="/login" className="btn btn-primary">
+          Sign in
+        </Link>
       </div>
     );
   }
@@ -62,24 +59,22 @@ export default function ProfilePage() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">
-            <History style={{ color: 'var(--primary)' }} />
-            My Upload History
-          </h1>
+          <span className="eyebrow">My uploads</span>
+          <h1 className="page-title">Everything you&rsquo;ve added.</h1>
           <p className="page-subtitle">
-            All photos uploaded under your account ({photos.length} total)
+            {photos.length === 1 ? '1 photo' : `${photos.length} photos`}, newest first.
           </p>
         </div>
 
         <Link href="/" className="btn btn-primary">
-          Upload New Photo
+          Upload more
         </Link>
       </div>
 
       <PhotoGrid
         photos={photos}
         showUploaderInfo={false}
-        emptyMessage="You haven't uploaded any photos yet! Head back to the homepage to share your first picture."
+        emptyMessage="You haven't uploaded anything yet. Head to the homepage to add your first photo."
       />
     </div>
   );

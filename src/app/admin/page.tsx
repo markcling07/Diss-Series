@@ -1,9 +1,8 @@
-'use me';
 'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Lock, User, AlertCircle } from 'lucide-react';
+import { Lock, User, AlertCircle } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -27,11 +26,11 @@ export default function AdminLoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Invalid admin credentials');
+        throw new Error(data.error || 'That username or password didn’t match.');
       }
 
       if (data.user.role !== 'ADMIN' && data.user.role !== 'SUPER_ADMIN') {
-        throw new Error('Access denied: You do not have administrator permissions.');
+        throw new Error('That account doesn’t have administrator access.');
       }
 
       router.push('/admin/dashboard');
@@ -44,48 +43,34 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div style={{ maxWidth: '440px', margin: '3rem auto 0' }}>
-      <div className="glass-panel" style={{ padding: '2.5rem', border: '1px solid rgba(204, 0, 0, 0.3)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div
-            style={{
-              width: '56px',
-              height: '56px',
-              margin: '0 auto 1rem',
-              borderRadius: 'var(--radius-full)',
-              background: '#fdecec',
-              color: 'var(--primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Shield size={32} />
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800 }}>Admin Portal</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-            Authorized Administrator Access Only
-          </p>
+    <div className="auth">
+      <div className="panel">
+        <div className="auth-head">
+          <span className="eyebrow">Admin portal</span>
+          <h1 className="auth-title">Administrator sign in.</h1>
+          <p className="auth-sub">Staff accounts only.</p>
         </div>
 
         {error && (
-          <div className="alert-error" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <AlertCircle size={18} />
+          <div className="alert-error">
+            <AlertCircle size={16} />
             <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Admin Username or Email</label>
-            <div style={{ position: 'relative' }}>
-              <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <label className="form-label" htmlFor="admin-id">
+              Username or email
+            </label>
+            <div className="field">
+              <User size={16} className="field-icon" />
               <input
+                id="admin-id"
                 type="text"
                 required
                 className="form-input"
-                style={{ paddingLeft: '2.4rem' }}
-                placeholder="Admin username or email"
+                placeholder="admin@app.com"
                 value={loginId}
                 onChange={(e) => setLoginId(e.target.value)}
               />
@@ -93,35 +78,39 @@ export default function AdminLoginPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Admin Password</label>
-            <div style={{ position: 'relative' }}>
-              <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <label className="form-label" htmlFor="admin-password">
+              Password
+            </label>
+            <div className="field">
+              <Lock size={16} className="field-icon" />
               <input
+                id="admin-password"
                 type="password"
                 required
                 className="form-input"
-                style={{ paddingLeft: '2.4rem' }}
-                placeholder="Password"
+                placeholder="Your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-primary"
-            style={{ width: '100%', marginTop: '1rem', background: 'var(--primary)' }}
-          >
-            {loading ? 'Verifying Credentials...' : 'Access Admin Dashboard'}
+          <button type="submit" disabled={loading} className="btn btn-primary btn-block">
+            {loading ? 'Checking…' : 'Sign in'}
           </button>
         </form>
 
-        <div style={{ marginTop: '1.5rem', padding: '0.75rem', background: 'rgba(255, 255, 255, 0.03)', borderRadius: 'var(--radius-sm)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          <strong>Default Admin Accounts (Initial Setup):</strong>
-          <br />• SuperAdmin: <code>superadmin@app.com / admin123</code>
-          <br />• Admin: <code>admin@app.com / admin123</code>
+        {/* Seeded first-run credentials. These are printed for setup and should
+            come out before this is exposed to anyone outside the classroom. */}
+        <div className="notice" style={{ marginTop: '1.5rem', marginBottom: 0 }}>
+          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+          <span>
+            First-run accounts — change these before going live.
+            <br />
+            <code>superadmin@app.com / admin123</code>
+            <br />
+            <code>admin@app.com / admin123</code>
+          </span>
         </div>
       </div>
     </div>

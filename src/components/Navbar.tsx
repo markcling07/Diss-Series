@@ -1,10 +1,9 @@
-'use me';
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Camera, User, LogOut, Shield, History, Upload, LayoutGrid } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 interface AuthUser {
   id: string;
@@ -46,27 +45,31 @@ export default function Navbar() {
     <header className="navbar">
       <div className="nav-content">
         <Link href="/" className="logo">
-          <Camera size={26} />
-          <span>DissPic</span>
+          DissPic
         </Link>
 
+        {/* Labels only. At this size a row of icons alongside mono capitals
+            reads as clutter, and the words are unambiguous on their own. */}
         <nav className="nav-links">
           <Link href="/" className={`nav-link ${pathname === '/' ? 'active' : ''}`}>
-            <Upload size={18} />
-            <span>Upload</span>
+            Upload
           </Link>
 
           {user && (
-            <Link href="/profile" className={`nav-link ${pathname === '/profile' ? 'active' : ''}`}>
-              <History size={18} />
-              <span>My Uploads</span>
+            <Link
+              href="/profile"
+              className={`nav-link ${pathname === '/profile' ? 'active' : ''}`}
+            >
+              My uploads
             </Link>
           )}
 
           {user && (
-            <Link href="/galleries" className={`nav-link ${pathname.startsWith('/galleries') ? 'active' : ''}`}>
-              <LayoutGrid size={18} />
-              <span>My Galleries</span>
+            <Link
+              href="/galleries"
+              className={`nav-link ${pathname.startsWith('/galleries') ? 'active' : ''}`}
+            >
+              Galleries
             </Link>
           )}
 
@@ -75,34 +78,33 @@ export default function Navbar() {
               href="/admin/dashboard"
               className={`nav-link ${pathname.startsWith('/admin') ? 'active' : ''}`}
             >
-              <Shield size={18} />
-              <span>Admin Dashboard</span>
+              Admin
             </Link>
           )}
 
-          {!loading && (
-            user ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginLeft: '0.5rem' }}>
-                <span className="badge badge-user" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.35rem 0.75rem' }}>
-                  <User size={14} />
-                  {user.username}
-                </span>
-                <button onClick={handleLogout} className="btn btn-secondary btn-sm" title="Logout">
-                  <LogOut size={16} />
-                  <span>Logout</span>
+          {!loading &&
+            (user ? (
+              <div className="nav-session">
+                <span className="nav-user">@{user.username}</span>
+                <button
+                  onClick={handleLogout}
+                  className="btn btn-secondary btn-sm"
+                  title="Sign out"
+                >
+                  <LogOut size={14} />
+                  <span>Sign out</span>
                 </button>
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '0.5rem' }}>
+              <div className="nav-session">
                 <Link href="/login" className="btn btn-secondary btn-sm">
-                  Sign In
+                  Sign in
                 </Link>
                 <Link href="/register" className="btn btn-primary btn-sm">
-                  Create Account
+                  Create account
                 </Link>
               </div>
-            )
-          )}
+            ))}
         </nav>
       </div>
     </header>

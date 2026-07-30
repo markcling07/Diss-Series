@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, FolderPlus, LayoutGrid, Loader2, Share2 } from 'lucide-react';
+import { AlertCircle, FolderPlus, Loader2 } from 'lucide-react';
 
 interface Gallery {
   id: string;
@@ -75,26 +75,26 @@ export default function GalleriesPage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '5rem 1rem', color: 'var(--text-muted)' }}>
-        <Loader2 size={36} className="animate-spin" style={{ margin: '0 auto 1rem', color: 'var(--primary)' }} />
-        <p>Loading your galleries...</p>
+      <div className="state">
+        <Loader2 size={28} className="animate-spin" />
+        <p className="state-mono" style={{ marginTop: '1rem' }}>
+          Loading galleries
+        </p>
       </div>
     );
   }
 
   if (signedOut) {
     return (
-      <div style={{ maxWidth: '500px', margin: '4rem auto', textAlign: 'center' }}>
-        <div className="glass-panel" style={{ padding: '2.5rem' }}>
-          <AlertCircle size={40} style={{ color: 'var(--danger)', margin: '0 auto 1rem' }} />
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem' }}>Sign in required</h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-            You need an account to create a gallery. The people you share it with won&apos;t need one.
-          </p>
-          <Link href="/login" className="btn btn-primary">
-            Sign In Now
-          </Link>
-        </div>
+      <div className="state-narrow">
+        <span className="eyebrow">Sign in required</span>
+        <h1 className="state-title">Galleries need an account.</h1>
+        <p className="state-text">
+          You need one to create a gallery. The people you share it with won&apos;t.
+        </p>
+        <Link href="/login" className="btn btn-primary">
+          Sign in
+        </Link>
       </div>
     );
   }
@@ -103,52 +103,56 @@ export default function GalleriesPage() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">
-            <LayoutGrid style={{ color: 'var(--primary)' }} />
-            My Galleries
-          </h1>
+          <span className="eyebrow">Galleries</span>
+          <h1 className="page-title">Collect from everyone.</h1>
           <p className="page-subtitle">
-            Create a gallery, then share its link or QR code so everyone can upload into it
+            Create a gallery, then share its link or QR code. Anyone who opens it can add
+            photos without signing up.
           </p>
         </div>
       </div>
 
-      <div className="glass-panel">
+      <div className="panel">
         <form onSubmit={handleCreate}>
           <div className="form-group">
-            <label className="form-label" htmlFor="gallery-name">Gallery name</label>
+            <label className="form-label" htmlFor="gallery-name">
+              Gallery name
+            </label>
             <input
               id="gallery-name"
               className="form-input"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Class 5A Zoo Trip"
+              placeholder="e.g. Class 5A zoo trip"
               maxLength={80}
               required
             />
           </div>
 
           {error && (
-            <div className="alert-error" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <AlertCircle size={18} />
+            <div className="alert-error">
+              <AlertCircle size={16} />
               <span>{error}</span>
             </div>
           )}
 
-          <button type="submit" className="btn btn-primary" disabled={creating} style={{ marginTop: '1rem' }}>
-            <FolderPlus size={18} />
-            <span>{creating ? 'Creating...' : 'Create Gallery'}</span>
+          <button type="submit" className="btn btn-primary" disabled={creating}>
+            <FolderPlus size={16} />
+            <span>{creating ? 'Creating…' : 'Create gallery'}</span>
           </button>
         </form>
       </div>
 
       {galleries.length === 0 ? (
-        <div className="glass-panel" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-          <p>No galleries yet. Create one above to get a shareable link and QR code.</p>
+        <div className="state-empty">
+          <p className="state-mono">No galleries</p>
+          <p className="state-text" style={{ marginTop: '0.75rem', marginBottom: 0 }}>
+            Create one above to get a shareable link and QR code.
+          </p>
         </div>
       ) : (
-        <div className="glass-panel">
+        <div className="panel">
           <div className="table-container">
             <table className="custom-table">
               <thead>
@@ -156,21 +160,25 @@ export default function GalleriesPage() {
                   <th>Name</th>
                   <th>Code</th>
                   <th>Photos</th>
-                  <th>Share</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {galleries.map((gallery) => (
                   <tr key={gallery.id}>
-                    <td>{gallery.name}</td>
                     <td>
-                      <span className="gallery-code" style={{ fontSize: '1rem' }}>{gallery.code}</span>
+                      <span className="table-name">{gallery.name}</span>
+                    </td>
+                    <td>
+                      <span className="gallery-code gallery-code-sm">{gallery.code}</span>
                     </td>
                     <td>{gallery._count.photos}</td>
                     <td>
-                      <Link href={`/g/${gallery.code}`} className="btn btn-secondary btn-sm">
-                        <Share2 size={14} />
-                        <span>Open</span>
+                      <Link
+                        href={`/g/${gallery.code}`}
+                        className="btn btn-secondary btn-sm"
+                      >
+                        Open
                       </Link>
                     </td>
                   </tr>
