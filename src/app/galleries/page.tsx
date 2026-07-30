@@ -204,16 +204,6 @@ export default function GalleriesPage() {
       {/* Everything this account has uploaded, wherever it went. Lives here now
           that the separate uploads page is gone. */}
       <section className="page-section">
-        <div className="page-section-head">
-          <div>
-            <span className="eyebrow">Your photos</span>
-            <h2 className="page-section-title">Everything you&rsquo;ve added.</h2>
-          </div>
-          <span className="sheet-count">
-            {photos.length === 1 ? '1 photo' : `${photos.length} photos`}
-          </span>
-        </div>
-
         <PhotoGrid
           photos={photos}
           showUploaderInfo={false}
