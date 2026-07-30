@@ -626,11 +626,12 @@ body {
     padding: 15px;
   }
 
-  /* Smaller thumbnails on phones, so a 40-photo gallery shows three per row
-     instead of two and needs far less scrolling. */
+  /* Exactly 5 per row on phones. A fixed count rather than auto-fill with a min
+     width, so the number of columns can't drift with screen width — thumbnails
+     scale instead. */
   .photo-grid {
-    grid-template-columns: repeat(auto-fill, minmax(min(100px, 100%), 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
   }
 
   .modal-card {
