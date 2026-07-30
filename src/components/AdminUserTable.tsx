@@ -106,7 +106,7 @@ export default function AdminUserTable({ users, currentUserId, onUserRoleUpdated
                             disabled={updatingId === user.id}
                             onClick={() => handleRoleChange(user.id, 'ADMIN')}
                             className="btn btn-secondary btn-sm"
-                            style={{ borderColor: 'rgba(168, 85, 247, 0.4)', color: '#d8b4fe' }}
+                            style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
                           >
                             <Shield size={14} />
                             Make Admin

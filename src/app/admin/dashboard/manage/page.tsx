@@ -88,7 +88,7 @@ export default function ManageAdminsPage() {
         </Link>
 
         <h1 style={{ fontSize: '2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <ShieldAlert style={{ color: '#ec4899' }} />
+          <ShieldAlert style={{ color: 'var(--primary)' }} />
           Manage Admin Access
         </h1>
         <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>

@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
 
   return (
     <div style={{ maxWidth: '440px', margin: '3rem auto 0' }}>
-      <div className="glass-panel" style={{ padding: '2.5rem', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+      <div className="glass-panel" style={{ padding: '2.5rem', border: '1px solid rgba(204, 0, 0, 0.3)' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div
             style={{
@@ -53,8 +53,8 @@ export default function AdminLoginPage() {
               height: '56px',
               margin: '0 auto 1rem',
               borderRadius: 'var(--radius-full)',
-              background: 'rgba(168, 85, 247, 0.2)',
-              color: '#d8b4fe',
+              background: '#fdecec',
+              color: 'var(--primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -112,7 +112,7 @@ export default function AdminLoginPage() {
             type="submit"
             disabled={loading}
             className="btn btn-primary"
-            style={{ width: '100%', marginTop: '1rem', background: 'linear-gradient(135deg, #a855f7, #6366f1)' }}
+            style={{ width: '100%', marginTop: '1rem', background: 'var(--primary)' }}
           >
             {loading ? 'Verifying Credentials...' : 'Access Admin Dashboard'}
           </button>

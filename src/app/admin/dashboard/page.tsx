@@ -79,7 +79,7 @@ export default function AdminDashboardPage() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <h1 style={{ fontSize: '2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <Shield style={{ color: '#a855f7' }} />
+              <Shield style={{ color: 'var(--primary)' }} />
               Admin Photo Dashboard
             </h1>
             {currentUser && (
@@ -94,8 +94,8 @@ export default function AdminDashboardPage() {
         </div>
 
         {currentUser?.role === 'SUPER_ADMIN' && (
-          <Link href="/admin/dashboard/manage" className="btn btn-secondary" style={{ borderColor: 'rgba(168, 85, 247, 0.4)' }}>
-            <Users size={18} style={{ color: '#d8b4fe' }} />
+          <Link href="/admin/dashboard/manage" className="btn btn-secondary" style={{ borderColor: 'var(--primary)' }}>
+            <Users size={18} style={{ color: 'var(--primary)' }} />
             <span>Manage Admins</span>
           </Link>
         )}
@@ -110,12 +110,12 @@ export default function AdminDashboardPage() {
 
         <div className="glass-panel" style={{ padding: '1.25rem', textAlign: 'center' }}>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Registered User Uploads</span>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#a5b4fc', marginTop: '0.25rem' }}>{registeredUploads}</div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--primary)', marginTop: '0.25rem' }}>{registeredUploads}</div>
         </div>
 
         <div className="glass-panel" style={{ padding: '1.25rem', textAlign: 'center' }}>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Guest Uploads</span>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#cbd5e1', marginTop: '0.25rem' }}>{guestUploads}</div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-muted)', marginTop: '0.25rem' }}>{guestUploads}</div>
         </div>
       </div>
 

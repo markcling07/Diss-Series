@@ -39,8 +39,8 @@ export default function PostUploadModal({ isOpen, onClose }: Props) {
         </h3>
 
         <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.25rem', lineHeight: 1.5 }}>
-          You uploaded this photo as a <strong style={{ color: '#cbd5e1' }}>Guest</strong>. 
-          Without an account, <strong style={{ color: '#fca5a5' }}>you cannot view your upload history</strong> after leaving this page.
+          You uploaded this photo as a <strong style={{ color: 'var(--text-main)' }}>Guest</strong>.
+          Without an account, <strong style={{ color: 'var(--danger)' }}>you cannot view your upload history</strong> after leaving this page.
         </p>
 
         <div
@@ -54,7 +54,7 @@ export default function PostUploadModal({ isOpen, onClose }: Props) {
             alignItems: 'center',
             gap: '0.6rem',
             fontSize: '0.85rem',
-            color: '#fde047',
+            color: '#92400e',
             textAlign: 'left',
           }}
         >

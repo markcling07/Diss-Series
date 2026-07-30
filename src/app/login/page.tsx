@@ -54,7 +54,7 @@ export default function LoginPage() {
               height: '56px',
               margin: '0 auto 1rem',
               borderRadius: 'var(--radius-full)',
-              background: 'rgba(99, 102, 241, 0.15)',
+              background: '#fdecec',
               color: 'var(--primary)',
               display: 'flex',
               alignItems: 'center',
