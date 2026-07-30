@@ -176,7 +176,9 @@ export default function UploadForm({ galleryCode, onUploaded }: Props = {}) {
 
   return (
     <>
-      <div className="upload-card glass-panel">
+      {/* No card wrapper, keeping the upload control visually light. The margin
+          keeps it clear of whatever follows (e.g. the photo grid). */}
+      <div style={{ marginBottom: '20px' }}>
         <div>
           {error && (
             <div className="alert-error" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -203,35 +205,28 @@ export default function UploadForm({ galleryCode, onUploaded }: Props = {}) {
           />
 
           {uploading ? (
-            <div className="dropzone" style={{ cursor: 'default' }}>
-              <Loader2 size={32} className="animate-spin" style={{ color: 'var(--primary)' }} />
-              <p style={{ marginTop: '0.5rem', fontWeight: 600 }}>{uploadProgress}</p>
+            <div className="upload-bar">
+              <Loader2 size={20} className="animate-spin" style={{ color: 'var(--primary)', flexShrink: 0 }} />
+              <span style={{ fontWeight: 600 }}>{uploadProgress}</span>
             </div>
           ) : items.length === 0 ? (
-            /* STEP 1: DROP / SELECT MULTIPLE FILES */
+            /* STEP 1: SELECT FILES. A compact row rather than a tall dropzone,
+               so the photo grid below stays near the top of the page. Drop
+               still works anywhere on this row. */
             <div
-              className={`dropzone ${isDragActive ? 'drag-active' : ''}`}
+              className={`upload-bar ${isDragActive ? 'drag-active' : ''}`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
             >
-              <div className="dropzone-icon">
-                <UploadCloud size={32} />
-              </div>
-
-              <div>
-                <p style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                  Drag & drop your pictures here
-                </p>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                  or click to select multiple files from your device
-                </p>
-              </div>
-
-              <span className="badge badge-guest" style={{ marginTop: '0.5rem' }}>
-                Select multiple JPG, PNG, GIF, WebP up to 10MB each
-              </span>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <UploadCloud size={18} />
+                <span>Select photos</span>
+              </button>
             </div>
           ) : (
             /* STEP 2: PREVIEW ALL SELECTED IMAGES BEFORE UPLOAD */

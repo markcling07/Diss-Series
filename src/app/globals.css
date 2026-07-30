@@ -241,38 +241,28 @@ body {
   outline-offset: 1px;
 }
 
-.upload-card, .glass-panel {
+.glass-panel {
   border: 1px solid #ccc;
   padding: 20px;
   margin-bottom: 20px;
   background: #fff;
 }
 
-.dropzone {
-  border: 2px dashed #999;
-  padding: 30px;
-  text-align: center;
-  background: #fafafa;
-  cursor: pointer;
+/* Compact one-line upload control, used in place of a tall dropzone so the
+   photo grid stays near the top of the page. Files can still be dropped on it. */
+.upload-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 4px 0;
 }
 
-.dropzone:hover {
-  background: #f0f0f0;
-}
-
-/* UploadForm toggles .drag-active while a file is held over the dropzone. */
-.dropzone.drag-active {
-  border-color: var(--primary);
-  background: #fdecec;
-}
-
-.dropzone-icon {
-  color: var(--text-muted);
-  margin-bottom: 10px;
-}
-
-.dropzone.drag-active .dropzone-icon {
-  color: var(--primary);
+/* UploadForm toggles .drag-active while a file is held over this row. Files can
+   still be dropped here even though nothing advertises it. */
+.upload-bar.drag-active {
+  outline: 2px dashed var(--primary);
+  outline-offset: 6px;
 }
 
 .image-preview-container {
@@ -610,7 +600,6 @@ body {
     padding: 0 12px;
   }
 
-  .upload-card,
   .glass-panel {
     padding: 15px;
   }
@@ -620,10 +609,6 @@ body {
   .photo-grid {
     grid-template-columns: repeat(auto-fill, minmax(min(100px, 100%), 1fr));
     gap: 8px;
-  }
-
-  .dropzone {
-    padding: 20px 15px;
   }
 
   .modal-card {
