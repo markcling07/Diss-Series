@@ -776,20 +776,21 @@ a:focus-visible {
   margin-bottom: var(--sp-7);
 }
 
+/* No rule under it — the date and its frame count sit directly above the grid,
+   so the space alone does the separating. */
 .sheet-head {
   display: flex;
   align-items: baseline;
   gap: var(--sp-4);
-  padding-bottom: var(--sp-2);
-  border-bottom: 1px solid var(--ink);
-  margin-bottom: var(--sp-4);
+  margin-bottom: var(--sp-3);
 }
 
+/* Explicit weight: this is an h2, so without it the heading rule's 700 wins. */
 .sheet-date {
   font-family: var(--display);
-  font-size: var(--t-lg);
-  font-weight: 700;
-  letter-spacing: -0.022em;
+  font-size: var(--t-md);
+  font-weight: 400;
+  letter-spacing: -0.01em;
   margin: 0;
 }
 
