@@ -1,8 +1,7 @@
-'use me';
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { UploadCloud, CheckCircle, AlertCircle, Loader2, X, Upload, Plus, FolderPlus } from 'lucide-react';
+import { UploadCloud, CheckCircle, AlertCircle, Loader2, X, Upload, Plus } from 'lucide-react';
 import PostUploadModal from './PostUploadModal';
 
 interface PreviewItem {
@@ -30,7 +29,7 @@ export default function UploadForm({ galleryCode, onUploaded, actions }: Props =
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFiles = (selectedFiles: FileList | File[]) => {
@@ -43,12 +42,12 @@ export default function UploadForm({ galleryCode, onUploaded, actions }: Props =
 
     Array.from(selectedFiles).forEach((selectedFile) => {
       if (!validTypes.includes(selectedFile.type)) {
-        errors.push(`"${selectedFile.name}" is not a valid image format.`);
+        errors.push(`"${selectedFile.name}" isn't an image we can read.`);
         return;
       }
 
       if (selectedFile.size > 10 * 1024 * 1024) {
-        errors.push(`"${selectedFile.name}" exceeds the 10MB limit.`);
+        errors.push(`"${selectedFile.name}" is over the 10MB limit.`);
         return;
       }
 
@@ -94,7 +93,7 @@ export default function UploadForm({ galleryCode, onUploaded, actions }: Props =
 
   const handleConfirmUpload = async () => {
     if (items.length === 0) {
-      setError('Please select at least one photo.');
+      setError('Pick at least one photo first.');
       return;
     }
 
@@ -108,7 +107,7 @@ export default function UploadForm({ galleryCode, onUploaded, actions }: Props =
     try {
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        setUploadProgress(`Uploading photo ${i + 1} of ${items.length}...`);
+        setUploadProgress(`Uploading ${i + 1} of ${items.length}…`);
 
         // Combine general caption + individual caption if both are present
         const combinedCaption = item.caption && generalCaption.trim()
@@ -128,7 +127,7 @@ export default function UploadForm({ galleryCode, onUploaded, actions }: Props =
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(`Failed uploading ${item.file.name}: ${data.error || 'Unknown error'}`);
+          throw new Error(`Couldn't upload ${item.file.name}: ${data.error || 'unknown error'}`);
         }
 
         if (data.isGuest) {
@@ -139,9 +138,7 @@ export default function UploadForm({ galleryCode, onUploaded, actions }: Props =
       }
 
       setSuccessMsg(
-        successCount === 1
-          ? '1 photo uploaded successfully!'
-          : `All ${successCount} photos uploaded successfully!`
+        successCount === 1 ? '1 photo added.' : `${successCount} photos added.`
       );
       handleClearAll();
       onUploaded?.();
@@ -152,7 +149,7 @@ export default function UploadForm({ galleryCode, onUploaded, actions }: Props =
         setShowModal(true);
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred during upload.');
+      setError(err.message || 'Something went wrong during the upload.');
     } finally {
       setUploading(false);
       setUploadProgress('');
@@ -179,201 +176,142 @@ export default function UploadForm({ galleryCode, onUploaded, actions }: Props =
 
   return (
     <>
-      {/* No card wrapper, keeping the upload control visually light. The margin
-          keeps it clear of whatever follows (e.g. the photo grid). */}
-      <div style={{ marginBottom: '20px' }}>
-        <div>
-          {error && (
-            <div className="alert-error" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <AlertCircle size={18} />
-              <span>{error}</span>
-            </div>
-          )}
+      {/* No panel wrapper — the upload control stays visually light so the
+          contact sheet below it keeps the weight on the page. */}
+      <div className="upload-zone">
+        {error && (
+          <div className="alert-error">
+            <AlertCircle size={16} />
+            <span>{error}</span>
+          </div>
+        )}
 
-          {successMsg && (
-            <div className="alert-success" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <CheckCircle size={18} />
-              <span>{successMsg}</span>
-            </div>
-          )}
+        {successMsg && (
+          <div className="alert-success">
+            <CheckCircle size={16} />
+            <span>{successMsg}</span>
+          </div>
+        )}
 
-          {/* Hidden File Input for Multiple Files */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept="image/jpeg,image/png,image/gif,image/webp"
-            style={{ display: 'none' }}
-            onChange={(e) => e.target.files && processFiles(e.target.files)}
-          />
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/jpeg,image/png,image/gif,image/webp"
+          style={{ display: 'none' }}
+          onChange={(e) => e.target.files && processFiles(e.target.files)}
+        />
 
-          {uploading ? (
-            <div className="upload-bar">
-              <Loader2 size={20} className="animate-spin" style={{ color: 'var(--primary)', flexShrink: 0 }} />
-              <span style={{ fontWeight: 600 }}>{uploadProgress}</span>
-            </div>
-          ) : items.length === 0 ? (
-            /* STEP 1: SELECT FILES. A compact row rather than a tall dropzone,
-               so the photo grid below stays near the top of the page. Drop
-               still works anywhere on this row. */
-            <div
-              className={`upload-bar ${isDragActive ? 'drag-active' : ''}`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
+        {uploading ? (
+          <div className="upload-bar">
+            <Loader2 size={18} className="animate-spin" />
+            <span className="upload-status">{uploadProgress}</span>
+          </div>
+        ) : items.length === 0 ? (
+          /* Step 1 — choose files. A compact row rather than a tall dropzone,
+             so the sheet below stays near the top of the page. Files can still
+             be dropped anywhere on this row. */
+          <div
+            className={`upload-bar ${isDragActive ? 'drag-active' : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => fileInputRef.current?.click()}
             >
+              <UploadCloud size={16} />
+              <span>Choose photos</span>
+            </button>
+
+            {actions}
+          </div>
+        ) : (
+          /* Step 2 — review the selection before it goes up. */
+          <div>
+            <div className="upload-tray-head">
+              <span className="state-mono">
+                {items.length} photo{items.length > 1 ? 's' : ''} ready
+              </span>
+
               <button
                 type="button"
-                className="btn btn-primary"
                 onClick={() => fileInputRef.current?.click()}
+                className="btn btn-secondary btn-sm"
               >
-                <UploadCloud size={18} />
-                <span>Select photos</span>
+                <Plus size={13} />
+                Add more
+              </button>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="album-caption">
+                Caption for the whole batch
+              </label>
+              <input
+                id="album-caption"
+                type="text"
+                className="form-input"
+                placeholder="e.g. Class 5A zoo trip"
+                value={generalCaption}
+                onChange={(e) => setGeneralCaption(e.target.value)}
+                maxLength={150}
+              />
+            </div>
+
+            <div className="upload-tray">
+              {items.map((item) => (
+                <div key={item.id} className="upload-item">
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    onClick={() => handleRemoveItem(item.id)}
+                    aria-label={`Remove ${item.file.name}`}
+                  >
+                    <X size={13} />
+                  </button>
+
+                  <div className="upload-item-thumb">
+                    <img src={item.previewUrl} alt="" />
+                  </div>
+
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Caption this one…"
+                    value={item.caption}
+                    onChange={(e) => handleCaptionChange(item.id, e.target.value)}
+                    maxLength={200}
+                    aria-label={`Caption for ${item.file.name}`}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="upload-actions">
+              <button
+                type="button"
+                onClick={handleConfirmUpload}
+                className="btn btn-primary"
+              >
+                <Upload size={16} />
+                <span>
+                  Upload {items.length} photo{items.length > 1 ? 's' : ''}
+                </span>
               </button>
 
-              {actions}
-            </div>
-          ) : (
-            /* STEP 2: PREVIEW ALL SELECTED IMAGES BEFORE UPLOAD */
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>
-                  📸 Selected Photos ({items.length} image{items.length > 1 ? 's' : ''})
-                </div>
-                
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="btn btn-secondary btn-sm"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
-                >
-                  <Plus size={14} />
-                  Add More Photos
-                </button>
-              </div>
-
-              {/* General / Album Caption Field */}
-              <div className="form-group" style={{ marginBottom: '1rem' }}>
-                <label className="form-label">
-                  General Album Caption / Collection Title (Applies to all photos)
-                </label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Summer Vacation 2026, Birthday Party, Event Album..."
-                  value={generalCaption}
-                  onChange={(e) => setGeneralCaption(e.target.value)}
-                  maxLength={150}
-                />
-              </div>
-
-              {/* Grid of Preview Cards with Individual Captions */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                  gap: '1rem',
-                  maxHeight: '400px',
-                  overflowY: 'auto',
-                  padding: '0.5rem',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                  background: '#fafafa',
-                  marginBottom: '1rem',
-                }}
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="btn btn-secondary"
               >
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      padding: '8px',
-                      background: '#fff',
-                      position: 'relative',
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveItem(item.id)}
-                      title="Remove image"
-                      style={{
-                        position: 'absolute',
-                        top: '4px',
-                        right: '4px',
-                        background: 'rgba(0, 0, 0, 0.7)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '50%',
-                        width: '22px',
-                        height: '22px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 2,
-                      }}
-                    >
-                      <X size={14} />
-                    </button>
-
-                    <div
-                      style={{
-                        width: '100%',
-                        height: '130px',
-                        overflow: 'hidden',
-                        borderRadius: '3px',
-                        background: '#eee',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <img
-                        src={item.previewUrl}
-                        alt="Preview"
-                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                      />
-                    </div>
-
-                    <div style={{ marginTop: '6px' }}>
-                      <input
-                        type="text"
-                        className="form-input"
-                        style={{ fontSize: '0.8rem', padding: '4px 6px' }}
-                        placeholder="Photo-specific caption..."
-                        value={item.caption}
-                        onChange={(e) => handleCaptionChange(item.id, e.target.value)}
-                        maxLength={200}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <button
-                  type="button"
-                  onClick={handleConfirmUpload}
-                  className="btn btn-primary"
-                  style={{ flex: 1 }}
-                >
-                  <Upload size={18} />
-                  <span>Confirm & Upload {items.length} Photo{items.length > 1 ? 's' : ''}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleClearAll}
-                  className="btn btn-secondary"
-                >
-                  Cancel All
-                </button>
-              </div>
+                Discard
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <PostUploadModal isOpen={showModal} onClose={() => setShowModal(false)} />

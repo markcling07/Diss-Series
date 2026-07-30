@@ -1,10 +1,9 @@
-'use me';
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Camera, User, LogOut, Shield, History, Upload, LayoutGrid } from 'lucide-react';
+import { ImagePlus, LogOut } from 'lucide-react';
 
 interface AuthUser {
   id: string;
@@ -18,6 +17,8 @@ export default function Navbar() {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
 
   const fetchUser = async () => {
     try {
@@ -35,7 +36,36 @@ export default function Navbar() {
     fetchUser();
   }, [pathname]);
 
+  // Close on a click anywhere else, or on Escape. Both listeners only exist
+  // while the menu is open.
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const handlePointer = (e: MouseEvent) => {
+      if (!accountRef.current?.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+
+    document.addEventListener('mousedown', handlePointer);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handlePointer);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [menuOpen]);
+
+  // The menu shouldn't survive a page change.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
   const handleLogout = async () => {
+    setMenuOpen(false);
     await fetch('/api/auth/logout', { method: 'POST' });
     setUser(null);
     router.push('/');
@@ -46,27 +76,22 @@ export default function Navbar() {
     <header className="navbar">
       <div className="nav-content">
         <Link href="/" className="logo">
-          <Camera size={26} />
-          <span>DissPic</span>
+          DissPic
         </Link>
 
+        {/* Labels only. At this size a row of icons alongside mono capitals
+            reads as clutter, and the words are unambiguous on their own. */}
         <nav className="nav-links">
           <Link href="/" className={`nav-link ${pathname === '/' ? 'active' : ''}`}>
-            <Upload size={18} />
-            <span>Upload</span>
+            Upload
           </Link>
 
           {user && (
-            <Link href="/profile" className={`nav-link ${pathname === '/profile' ? 'active' : ''}`}>
-              <History size={18} />
-              <span>My Uploads</span>
-            </Link>
-          )}
-
-          {user && (
-            <Link href="/galleries" className={`nav-link ${pathname.startsWith('/galleries') ? 'active' : ''}`}>
-              <LayoutGrid size={18} />
-              <span>My Galleries</span>
+            <Link
+              href="/galleries"
+              className={`nav-link ${pathname.startsWith('/galleries') ? 'active' : ''}`}
+            >
+              Galleries
             </Link>
           )}
 
@@ -75,34 +100,71 @@ export default function Navbar() {
               href="/admin/dashboard"
               className={`nav-link ${pathname.startsWith('/admin') ? 'active' : ''}`}
             >
-              <Shield size={18} />
-              <span>Admin Dashboard</span>
+              Admin
             </Link>
           )}
 
-          {!loading && (
-            user ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginLeft: '0.5rem' }}>
-                <span className="badge badge-user" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.35rem 0.75rem' }}>
-                  <User size={14} />
-                  {user.username}
-                </span>
-                <button onClick={handleLogout} className="btn btn-secondary btn-sm" title="Logout">
-                  <LogOut size={16} />
-                  <span>Logout</span>
+          {!loading &&
+            (user ? (
+              <div className="nav-account" ref={accountRef}>
+                {/* No avatar image exists yet, so the icon is a monogram of the
+                    first letter of the username. Once profile photos are real
+                    this is where the image goes. */}
+                <button
+                  type="button"
+                  className="nav-avatar"
+                  onClick={() => setMenuOpen((open) => !open)}
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                  aria-label={`Account menu for @${user.username}`}
+                >
+                  {user.username.charAt(0).toUpperCase()}
                 </button>
+
+                {menuOpen && (
+                  <div className="nav-menu" role="menu">
+                    <div className="nav-menu-head">
+                      <span className="nav-menu-name">@{user.username}</span>
+                      <span className="nav-menu-email">{user.email}</span>
+                    </div>
+
+                    {/* Placeholder — nothing is wired up behind this yet, so it
+                        says so rather than pretending to work. */}
+                    <button
+                      type="button"
+                      className="nav-menu-item"
+                      role="menuitem"
+                      disabled
+                    >
+                      <ImagePlus size={14} />
+                      <span>Upload profile photo</span>
+                      <span className="nav-menu-soon">Soon</span>
+                    </button>
+
+                    <div className="nav-menu-sep" />
+
+                    <button
+                      type="button"
+                      className="nav-menu-item nav-menu-item-exit"
+                      role="menuitem"
+                      onClick={handleLogout}
+                    >
+                      <LogOut size={14} />
+                      <span>Sign out</span>
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '0.5rem' }}>
+              <div className="nav-session">
                 <Link href="/login" className="btn btn-secondary btn-sm">
-                  Sign In
+                  Sign in
                 </Link>
                 <Link href="/register" className="btn btn-primary btn-sm">
-                  Create Account
+                  Create account
                 </Link>
               </div>
-            )
-          )}
+            ))}
         </nav>
       </div>
     </header>

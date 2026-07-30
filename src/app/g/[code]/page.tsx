@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
-import { AlertCircle, Check, Copy, LayoutGrid, Loader2, Share2 } from 'lucide-react';
+import { Check, Copy, Loader2, Share2 } from 'lucide-react';
 import PhotoGrid, { PhotoItem } from '@/components/PhotoGrid';
 import UploadForm from '@/components/UploadForm';
 
@@ -68,27 +68,27 @@ export default function GalleryPage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '5rem 1rem', color: 'var(--text-muted)' }}>
-        <Loader2 size={36} className="animate-spin" style={{ margin: '0 auto 1rem', color: 'var(--primary)' }} />
-        <p>Loading gallery...</p>
+      <div className="state">
+        <Loader2 size={28} className="animate-spin" />
+        <p className="state-mono" style={{ marginTop: '1rem' }}>
+          Loading gallery
+        </p>
       </div>
     );
   }
 
   if (error || !gallery) {
     return (
-      <div style={{ maxWidth: '500px', margin: '4rem auto', textAlign: 'center' }}>
-        <div className="glass-panel" style={{ padding: '2.5rem' }}>
-          <AlertCircle size={40} style={{ color: 'var(--danger)', margin: '0 auto 1rem' }} />
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem' }}>Gallery not found</h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-            No gallery matches the code <strong>{code}</strong>. Check it for typos, or ask whoever
-            shared the link to send it again.
-          </p>
-          <Link href="/" className="btn btn-primary">
-            Go to Homepage
-          </Link>
-        </div>
+      <div className="state-narrow">
+        <span className="eyebrow">Not found</span>
+        <h1 className="state-title">No gallery with that code.</h1>
+        <p className="state-text">
+          Nothing matches <span className="gallery-code gallery-code-sm">{code}</span>.
+          Check it for typos, or ask whoever shared the link to send it again.
+        </p>
+        <Link href="/" className="btn btn-primary">
+          Go to the homepage
+        </Link>
       </div>
     );
   }
@@ -97,14 +97,11 @@ export default function GalleryPage() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">
-            <LayoutGrid style={{ color: 'var(--primary)' }} />
-            {gallery.name}
-          </h1>
+          <span className="eyebrow">Gallery · {gallery.code}</span>
+          <h1 className="page-title">{gallery.name}</h1>
           <p className="page-subtitle">
-            {photos.length === 1 ? '1 photo' : `${photos.length} photos`}
-            {' · '}
-            anyone with this link can add to it
+            {photos.length === 1 ? '1 photo' : `${photos.length} photos`} · anyone with
+            this link can add to it
           </p>
         </div>
       </div>
@@ -120,7 +117,7 @@ export default function GalleryPage() {
             aria-expanded={showShare}
             aria-controls="share-panel"
           >
-            <Share2 size={18} />
+            <Share2 size={16} />
             <span>{showShare ? 'Hide share info' : 'Share'}</span>
           </button>
         }
@@ -130,13 +127,17 @@ export default function GalleryPage() {
           inviting people, so they shouldn't push the photos down the page.
           Rendered after the upload row so it expands directly below its button. */}
       {showShare && (
-        <div className="glass-panel" id="share-panel">
-          <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-            <div style={{ flex: '1 1 300px', minWidth: 0 }}>
+        <div className="panel" id="share-panel">
+          <div className="share-grid">
+            <div className="share-main">
               <label className="form-label">Gallery code</label>
-              <div className="gallery-code" style={{ marginBottom: '1rem' }}>{gallery.code}</div>
+              <div className="gallery-code" style={{ marginBottom: '1.5rem' }}>
+                {gallery.code}
+              </div>
 
-              <label className="form-label" htmlFor="share-url">Share link</label>
+              <label className="form-label" htmlFor="share-url">
+                Share link
+              </label>
               <input
                 id="share-url"
                 className="form-input"
@@ -148,29 +149,27 @@ export default function GalleryPage() {
               />
 
               <button type="button" className="btn btn-secondary btn-sm" onClick={handleCopy}>
-                {copied ? <Check size={14} /> : <Copy size={14} />}
+                {copied ? <Check size={13} /> : <Copy size={13} />}
                 <span>{copied ? 'Copied' : 'Copy link'}</span>
               </button>
             </div>
 
             {shareUrl && (
-              <div style={{ textAlign: 'center' }}>
-                <QRCodeSVG value={shareUrl} size={160} />
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                  Scan to join
-                </p>
+              <div className="share-qr">
+                <QRCodeSVG value={shareUrl} size={148} fgColor="#17161b" bgColor="#ffffff" />
+                <p className="share-qr-label">Scan to join</p>
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Uploader badges are omitted here to keep the grid to pure thumbnails;
-          who uploaded what is still shown in the lightbox. */}
+      {/* Uploader badges are omitted here to keep the sheet to pure frames; who
+          uploaded what is still shown in the lightbox. */}
       <PhotoGrid
         photos={photos}
         showUploaderInfo={false}
-        emptyMessage="No photos in this gallery yet — be the first to upload!"
+        emptyMessage="Nothing here yet — add the first photo above."
       />
     </div>
   );

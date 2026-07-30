@@ -1,10 +1,9 @@
-'use me';
 'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LogIn, User, Lock, AlertCircle } from 'lucide-react';
+import { User, Lock, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,13 +27,13 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Invalid credentials');
+        throw new Error(data.error || 'That username or password didn’t match.');
       }
 
       if (data.user.role === 'ADMIN' || data.user.role === 'SUPER_ADMIN') {
         router.push('/admin/dashboard');
       } else {
-        router.push('/profile');
+        router.push('/galleries');
       }
       router.refresh();
     } catch (err: any) {
@@ -45,48 +44,34 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ maxWidth: '440px', margin: '3rem auto 0' }}>
-      <div className="glass-panel" style={{ padding: '2.5rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div
-            style={{
-              width: '56px',
-              height: '56px',
-              margin: '0 auto 1rem',
-              borderRadius: 'var(--radius-full)',
-              background: '#fdecec',
-              color: 'var(--primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <LogIn size={28} />
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800 }}>Welcome Back</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-            Sign in to view your photo gallery history
-          </p>
+    <div className="auth">
+      <div className="panel">
+        <div className="auth-head">
+          <span className="eyebrow">Sign in</span>
+          <h1 className="auth-title">Welcome back.</h1>
+          <p className="auth-sub">Pick up where your uploads left off.</p>
         </div>
 
         {error && (
-          <div className="alert-error" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <AlertCircle size={18} />
+          <div className="alert-error">
+            <AlertCircle size={16} />
             <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Username or Email</label>
-            <div style={{ position: 'relative' }}>
-              <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <label className="form-label" htmlFor="login-id">
+              Username or email
+            </label>
+            <div className="field">
+              <User size={16} className="field-icon" />
               <input
+                id="login-id"
                 type="text"
                 required
                 className="form-input"
-                style={{ paddingLeft: '2.4rem' }}
-                placeholder="Username or email"
+                placeholder="you@example.com"
                 value={loginId}
                 onChange={(e) => setLoginId(e.target.value)}
               />
@@ -94,14 +79,16 @@ export default function LoginPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Password</label>
-            <div style={{ position: 'relative' }}>
-              <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <label className="form-label" htmlFor="login-password">
+              Password
+            </label>
+            <div className="field">
+              <Lock size={16} className="field-icon" />
               <input
+                id="login-password"
                 type="password"
                 required
                 className="form-input"
-                style={{ paddingLeft: '2.4rem' }}
                 placeholder="Your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -109,26 +96,21 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-primary"
-            style={{ width: '100%', marginTop: '1rem' }}
-          >
-            {loading ? 'Signing In...' : 'Sign In'}
+          <button type="submit" disabled={loading} className="btn btn-primary btn-block">
+            {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-          Don't have an account yet?{' '}
-          <Link href="/register" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
-            Create Account
+        <p className="auth-foot">
+          No account yet?{' '}
+          <Link href="/register" className="link-accent">
+            Create one
           </Link>
         </p>
 
-        <div style={{ marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-glass)', textAlign: 'center' }}>
-          <Link href="/admin" style={{ color: 'var(--text-dark)', fontSize: '0.85rem', textDecoration: 'none' }}>
-            Looking for Admin Portal Login? Click here &rarr;
+        <div className="auth-alt">
+          <Link href="/admin" className="link-quiet">
+            Admin portal &rarr;
           </Link>
         </div>
       </div>

@@ -1,8 +1,7 @@
-'use me';
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Calendar, Image as ImageIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, User, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface PhotoItem {
   id: string;
@@ -28,9 +27,13 @@ interface Props {
   showUploaderInfo?: boolean;
 }
 
+// Frame numbers are padded so the column of labels stays the same width as a
+// sheet fills up — the same reason a contact sheet prints 04 rather than 4.
+const frameLabel = (index: number) => String(index + 1).padStart(2, '0');
+
 export default function PhotoGrid({
   photos,
-  emptyMessage = 'No photos found',
+  emptyMessage = 'No photos yet',
   showUploaderInfo = true,
 }: Props) {
   // Tracked by index so the lightbox can step through `photos` in order.
@@ -58,55 +61,62 @@ export default function PhotoGrid({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedIndex, photos.length]);
 
-  // Photos arrive newest-first, so groups stay in that order.
-  const groupedPhotos = Array.from(
-    photos.reduce((groups, photo) => {
+  // One sheet per day. Photos arrive newest-first, so sheets stay in that
+  // order. The position in `photos` is carried along so a frame can open the
+  // lightbox at the right place without searching the array again.
+  const sheets = Array.from(
+    photos.reduce((groups, photo, index) => {
       const label = new Date(photo.createdAt).toLocaleDateString('en-US', {
         month: 'long',
         day: 'numeric',
         year: 'numeric',
       });
+      const entry = { photo, index };
       const existing = groups.get(label);
       if (existing) {
-        existing.push(photo);
+        existing.push(entry);
       } else {
-        groups.set(label, [photo]);
+        groups.set(label, [entry]);
       }
       return groups;
-    }, new Map<string, PhotoItem[]>())
+    }, new Map<string, { photo: PhotoItem; index: number }[]>())
   );
 
   if (photos.length === 0) {
     return (
-      <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-        <ImageIcon size={48} style={{ margin: '0 auto 1rem', opacity: 0.4 }} />
-        <p style={{ fontSize: '1.1rem' }}>{emptyMessage}</p>
+      <div className="state-empty">
+        <p className="state-mono">Empty sheet</p>
+        <p className="state-text" style={{ marginTop: '0.75rem', marginBottom: 0 }}>
+          {emptyMessage}
+        </p>
       </div>
     );
   }
 
   return (
     <div>
-      {groupedPhotos.map(([dateLabel, groupPhotos]) => (
-        <section key={dateLabel} className="photo-group">
-          <h2 className="photo-group-date">
-            <Calendar size={14} />
-            {dateLabel}
-          </h2>
+      {sheets.map(([dateLabel, entries]) => (
+        <section key={dateLabel} className="sheet">
+          <div className="sheet-head">
+            <h2 className="sheet-date">{dateLabel}</h2>
+            <span className="sheet-count">
+              {entries.length === 1 ? '1 frame' : `${entries.length} frames`}
+            </span>
+          </div>
 
           <div className="photo-grid">
-            {groupPhotos.map((photo) => (
-              <div key={photo.id} className="photo-card glass-panel">
+            {entries.map(({ photo, index }) => (
+              <div key={photo.id} className="photo-card">
                 <div
                   className="photo-img-wrapper"
                   role="button"
                   tabIndex={0}
                   aria-label={`View ${photo.caption || photo.originalName}`}
-                  onClick={() => setSelectedIndex(photos.indexOf(photo))}
+                  onClick={() => setSelectedIndex(index)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      setSelectedIndex(photos.indexOf(photo));
+                      setSelectedIndex(index);
                     }
                   }}
                 >
@@ -116,14 +126,18 @@ export default function PhotoGrid({
                     className="photo-img"
                     loading="lazy"
                   />
+                  <span className="frame-index" aria-hidden="true">
+                    {frameLabel(index)}
+                  </span>
                 </div>
 
                 {showUploaderInfo && (
                   <div className="photo-body">
                     <div className="photo-meta">
-                      <span className={`badge ${photo.user ? 'badge-user' : 'badge-guest'}`}>
-                        <User size={12} />
-                        {photo.user ? `@${photo.user.username}` : 'Anonymous'}
+                      <span
+                        className={`badge ${photo.user ? 'badge-user' : 'badge-guest'}`}
+                      >
+                        {photo.user ? `@${photo.user.username}` : 'Guest'}
                       </span>
                     </div>
                   </div>
@@ -142,7 +156,7 @@ export default function PhotoGrid({
               onClick={() => setSelectedIndex(null)}
               aria-label="Close photo"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
             <div className="lightbox-stage">
@@ -158,7 +172,7 @@ export default function PhotoGrid({
                   onClick={goPrev}
                   aria-label="Previous photo"
                 >
-                  <ChevronLeft size={24} />
+                  <ChevronLeft size={22} />
                 </button>
               )}
 
@@ -168,7 +182,7 @@ export default function PhotoGrid({
                   onClick={goNext}
                   aria-label="Next photo"
                 >
-                  <ChevronRight size={24} />
+                  <ChevronRight size={22} />
                 </button>
               )}
             </div>
@@ -182,7 +196,7 @@ export default function PhotoGrid({
 
               <div className="lightbox-meta">
                 <span>
-                  <Calendar size={13} />
+                  <Calendar size={12} />
                   {new Date(selectedPhoto.createdAt).toLocaleDateString('en-US', {
                     month: 'long',
                     day: 'numeric',
@@ -194,13 +208,13 @@ export default function PhotoGrid({
 
                 {showUploaderInfo && (
                   <span>
-                    <User size={13} />
-                    {selectedPhoto.user ? `@${selectedPhoto.user.username}` : 'Anonymous'}
+                    <User size={12} />
+                    {selectedPhoto.user ? `@${selectedPhoto.user.username}` : 'Guest'}
                   </span>
                 )}
 
                 <span className="lightbox-counter">
-                  {(selectedIndex ?? 0) + 1} of {photos.length}
+                  Frame {frameLabel(selectedIndex ?? 0)} / {frameLabel(photos.length - 1)}
                 </span>
               </div>
             </div>

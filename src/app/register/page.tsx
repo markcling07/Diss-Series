@@ -1,10 +1,9 @@
-'use me';
 'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { UserPlus, User, Mail, Lock, AlertCircle } from 'lucide-react';
+import { User, Mail, Lock, AlertCircle } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -29,10 +28,10 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Registration failed');
+        throw new Error(data.error || 'We couldn’t create that account.');
       }
 
-      router.push('/profile');
+      router.push('/galleries');
       router.refresh();
     } catch (err: any) {
       setError(err.message);
@@ -42,48 +41,36 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={{ maxWidth: '440px', margin: '3rem auto 0' }}>
-      <div className="glass-panel" style={{ padding: '2.5rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div
-            style={{
-              width: '56px',
-              height: '56px',
-              margin: '0 auto 1rem',
-              borderRadius: 'var(--radius-full)',
-              background: '#fdecec',
-              color: 'var(--primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <UserPlus size={28} />
-          </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800 }}>Create Account</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-            Register to keep track of all your uploaded photos
+    <div className="auth">
+      <div className="panel">
+        <div className="auth-head">
+          <span className="eyebrow">Create account</span>
+          <h1 className="auth-title">Keep your photos together.</h1>
+          <p className="auth-sub">
+            An account lists everything you upload, from any device.
           </p>
         </div>
 
         {error && (
-          <div className="alert-error" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <AlertCircle size={18} />
+          <div className="alert-error">
+            <AlertCircle size={16} />
             <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Username</label>
-            <div style={{ position: 'relative' }}>
-              <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <label className="form-label" htmlFor="register-username">
+              Username
+            </label>
+            <div className="field">
+              <User size={16} className="field-icon" />
               <input
+                id="register-username"
                 type="text"
                 required
                 className="form-input"
-                style={{ paddingLeft: '2.4rem' }}
-                placeholder="johndoe"
+                placeholder="janedoe"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -91,15 +78,17 @@ export default function RegisterPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Email Address</label>
-            <div style={{ position: 'relative' }}>
-              <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <label className="form-label" htmlFor="register-email">
+              Email
+            </label>
+            <div className="field">
+              <Mail size={16} className="field-icon" />
               <input
+                id="register-email"
                 type="email"
                 required
                 className="form-input"
-                style={{ paddingLeft: '2.4rem' }}
-                placeholder="john@example.com"
+                placeholder="jane@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -107,15 +96,17 @@ export default function RegisterPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Password</label>
-            <div style={{ position: 'relative' }}>
-              <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <label className="form-label" htmlFor="register-password">
+              Password
+            </label>
+            <div className="field">
+              <Lock size={16} className="field-icon" />
               <input
+                id="register-password"
                 type="password"
                 required
                 minLength={6}
                 className="form-input"
-                style={{ paddingLeft: '2.4rem' }}
                 placeholder="At least 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -123,20 +114,15 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-primary"
-            style={{ width: '100%', marginTop: '1rem' }}
-          >
-            {loading ? 'Creating Account...' : 'Sign Up'}
+          <button type="submit" disabled={loading} className="btn btn-primary btn-block">
+            {loading ? 'Creating account…' : 'Create account'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-          Already have an account?{' '}
-          <Link href="/login" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
-            Sign In
+        <p className="auth-foot">
+          Already have one?{' '}
+          <Link href="/login" className="link-accent">
+            Sign in
           </Link>
         </p>
       </div>

@@ -1,470 +1,1014 @@
-/* The font is loaded via next/font/google in layout.tsx, which self-hosts it
-   and exposes it as --font-jakarta. No network request at runtime. */
+/* ============================================================================
+   DissPic — editorial photo archive
+   ----------------------------------------------------------------------------
+   The design idea is a contact sheet: photos arrive in dated batches, each
+   batch printed as a sheet with a header, a frame count, and numbered frames.
+   Everything machine-ish (dates, codes, counts, nav) is set in mono, the way a
+   photo archive annotates its own prints. Colour is deliberately scarce — one
+   red, borrowed from a darkroom safelight, and otherwise ink on paper.
 
-/* Plain / Minimal HTML Styling */
-* {
+   The interface is set in SF Pro Display, named directly in the stack below so
+   Apple devices use the real face. It can't be shipped with the app, so Inter
+   is self-hosted behind it for everyone else. Fonts come from next/font in
+   layout.tsx as --font-ui and --font-mono, served from our own origin, so
+   nothing here reaches the network.
+   ========================================================================= */
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-/* Everything is sized in rem, so this one value scales all text down slightly
-   on both desktop and mobile. A percentage rather than a px value, so a reader
-   who has raised their browser's default font size still gets it honoured. */
-html {
-  font-size: 93.75%; /* 15px when the browser default is 16px */
+:root {
+  /* --- Ink & paper ------------------------------------------------------ */
+  /* Not pure black: a faint violet cast reads as printing ink rather than
+     screen black, and softens the contrast against warm photographs. */
+  --ink: #17161b;
+  --ink-soft: #43414c;
+  --muted: #6e6b78;
+  /* Cool off-white. Deliberately not a warm cream — the photos supply the
+     warmth, and a neutral sheet keeps their colour honest. */
+  --paper: #fbfbf9;
+  --paper-sunk: #f2f2ee;
+  --rule: #dfded7;
+  --rule-strong: #c9c8bf;
+
+  /* --- Safelight -------------------------------------------------------- */
+  /* The one colour you're allowed in a darkroom, and a deeper relative of the
+     red this app already used. Reserved for structure (eyebrows, active state,
+     primary action) — never for decoration. */
+  --safelight: #c8102e;
+  --safelight-deep: #8e0b20;
+  --safelight-wash: #fbedef;
+
+  --ok: #2e7d5b;
+  --ok-wash: #edf6f1;
+  --warn: #b4770e;
+  --warn-wash: #fdf5e6;
+
+  /* --- Type ------------------------------------------------------------- */
+  /* SF Pro Display first, so Apple devices use the real face. -apple-system and
+     BlinkMacSystemFont sit alongside it to catch Safari and Chrome versions
+     that expose the system font under those names instead. Inter is the
+     self-hosted fallback everywhere else — it was drawn as an SF-alike, so
+     Windows and Android land within a hair of the same look. */
+  --display: 'SF Pro Display', -apple-system, BlinkMacSystemFont, var(--font-ui),
+    'Segoe UI', sans-serif;
+  --body: 'SF Pro Text', 'SF Pro Display', -apple-system, BlinkMacSystemFont,
+    var(--font-ui), 'Segoe UI', sans-serif;
+  --mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --t-2xs: 0.625rem;
+  --t-xs: 0.6875rem;
+  --t-sm: 0.8125rem;
+  --t-base: 0.9375rem;
+  --t-md: 1.0625rem;
+  --t-lg: 1.375rem;
+  --t-xl: 1.875rem;
+
+  /* Tracking for mono labels. They are set small and uppercase, which needs
+     the extra letter-spacing to stay readable. */
+  --track-label: 0.12em;
+
+  /* --- Space ------------------------------------------------------------ */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+  --sp-8: 4.5rem;
+
+  --w-page: 1080px;
+  --w-form: 420px;
+
+  /* Crisp rather than rounded. 2px reads as a trimmed print edge; fully square
+     would tip the whole thing into broadsheet pastiche. */
+  --radius: 2px;
+  --radius-full: 9999px;
 }
 
-:root {
-  --text-main: #000000;
-  --text-dark: #333333;
-  --text-muted: #666666;
-  --primary: #cc0000;
-  --primary-dark: #a30000;
-  --danger: #cc0000;
-  --border-glass: #cccccc;
-  --radius-sm: 3px;
-  --radius-full: 9999px;
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--body);
+  font-size: var(--t-base);
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  /* Column flex so the footer sits at the bottom of short pages. */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 img {
   max-width: 100%;
 }
 
-/* Loading icons across the app carry .animate-spin; without this they render
-   frozen, which is worst exactly when a request is in flight. */
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-spin {
-    animation: none;
-  }
-}
-
-body {
-  font-family: var(--font-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+h1,
+h2,
+h3 {
+  font-family: var(--display);
+  /* SF Pro and Inter both tighten up as they get bigger. Headings take the
+     heavier weight and negative tracking that a grotesque needs at display
+     size — without it, large text drifts apart and looks unset. */
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  line-height: 1.1;
   margin: 0;
-  padding: 0;
-  background-color: #ffffff;
-  color: #000000;
-  line-height: 1.5;
-  /* Column flex + full viewport height so the footer sits at the bottom of the
-     screen on short pages instead of floating mid-page. */
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
 }
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+/* ============================================================================
+   Layout
+   ========================================================================= */
 
 .app-container {
-  max-width: 800px;
-  margin: 20px auto;
-  padding: 0 15px;
   width: 100%;
+  max-width: var(--w-page);
+  margin: 0 auto;
+  padding: var(--sp-6) var(--sp-5) var(--sp-7);
   flex: 1;
 }
 
-.site-footer {
-  text-align: center;
-  padding: 1.25rem 1rem;
-  color: var(--text-muted);
-  /* 0.75rem rather than 0.7rem so it stays ~11px after the root size drop. */
-  font-size: 0.75rem;
-}
+/* --- Masthead ------------------------------------------------------------ */
 
-/* Plain Navigation */
 .navbar {
-  border-bottom: 1px solid #ccc;
-  padding: 10px 20px;
-  background-color: #f8f9fa;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
 }
 
 .nav-content {
-  max-width: 800px;
+  max-width: var(--w-page);
   margin: 0 auto;
+  padding: var(--sp-4) var(--sp-5);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--sp-5);
 }
 
 .logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: bold;
-  font-size: 1.2rem;
-  color: #000;
+  font-family: var(--display);
+  font-size: var(--t-lg);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
   text-decoration: none;
+  white-space: nowrap;
+}
+
+/* A masthead full stop, in the one accent colour. The whole identity, in one
+   character. */
+.logo::after {
+  content: '.';
+  color: var(--safelight);
 }
 
 .nav-links {
   display: flex;
-  gap: 15px;
   align-items: center;
+  gap: var(--sp-5);
   flex-wrap: wrap;
 }
 
 .nav-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--primary);
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  color: var(--ink-soft);
   text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
   white-space: nowrap;
 }
 
-.nav-link:hover, .nav-link.active {
-  text-decoration: underline;
+.nav-link:hover {
+  color: var(--ink);
+  border-bottom-color: var(--rule-strong);
 }
 
-/* Homepage hero */
-.hero-header {
-  margin-bottom: 25px;
+.nav-link.active {
+  color: var(--ink);
+  border-bottom-color: var(--safelight);
+}
+
+/* Signed out: two separate calls to action, so they stay separate. */
+.nav-session {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* Signed in: everything about the account lives behind one icon. */
+.nav-account {
+  position: relative;
+}
+
+/* A monogram until profile photos exist. Circular so it reads as a person
+   rather than another button in the row. */
+.nav-avatar {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-full);
+  background: #fff;
+  font-family: var(--mono);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.nav-avatar:hover,
+.nav-avatar[aria-expanded='true'] {
+  border-color: var(--ink);
+  background: var(--paper-sunk);
+}
+
+.nav-avatar:focus-visible {
+  outline: 2px solid var(--safelight);
+  outline-offset: 2px;
+}
+
+.nav-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 100;
+  min-width: 220px;
+  max-width: calc(100vw - 2rem);
+  background: #fff;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 28px rgba(23, 22, 27, 0.12);
+  overflow: hidden;
+}
+
+.nav-menu-head {
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper-sunk);
+}
+
+.nav-menu-name {
+  display: block;
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.nav-menu-email {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--t-xs);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.nav-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border: none;
+  background: none;
+  font-family: var(--body);
+  font-size: var(--t-sm);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.nav-menu-item:hover:not(:disabled) {
+  background: var(--paper-sunk);
+}
+
+.nav-menu-item:focus-visible {
+  outline: 2px solid var(--safelight);
+  outline-offset: -2px;
+}
+
+.nav-menu-item:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+/* Marks the item as not built yet. Better than a link that goes nowhere. */
+.nav-menu-soon {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: var(--t-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 1px 4px;
+}
+
+.nav-menu-sep {
+  border-top: 1px solid var(--rule);
+}
+
+.nav-menu-item-exit:hover:not(:disabled) {
+  background: var(--safelight-wash);
+  color: var(--safelight-deep);
+}
+
+/* --- Footer -------------------------------------------------------------- */
+
+.site-footer {
+  border-top: 1px solid var(--rule);
+  max-width: var(--w-page);
+  margin: 0 auto;
+  width: 100%;
+  padding: var(--sp-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.site-footer-mark {
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.site-footer-meta {
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+/* ============================================================================
+   Type utilities
+   ========================================================================= */
+
+/* Structural label. Names the section in the archive's own voice, and is the
+   main place the accent colour appears. Sometimes carried by an h1, so the
+   line-height is pinned rather than inherited from the heading rule. */
+.eyebrow {
+  display: block;
+  line-height: 1.4;
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--safelight);
+  margin-bottom: var(--sp-2);
+}
+
+.eyebrow-quiet {
+  color: var(--muted);
+}
+
+.mono-meta {
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+/* ============================================================================
+   Hero — home page only
+   ========================================================================= */
+
+.hero {
+  padding: var(--sp-6) 0 var(--sp-6);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: var(--sp-6);
 }
 
 .hero-title {
-  font-size: clamp(1.75rem, 8vw, 2.75rem);
-  font-weight: 800;
-  line-height: 1.15;
+  font-size: clamp(2.25rem, 7vw, 3.75rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
   margin: 0;
+  max-width: 16ch;
 }
 
-/* Page headers */
+.hero-sub {
+  margin-top: var(--sp-4);
+  max-width: 46ch;
+  font-size: var(--t-md);
+  color: var(--ink-soft);
+}
+
+/* ============================================================================
+   Page headers
+   ========================================================================= */
+
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: var(--sp-4);
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: var(--sp-6);
 }
 
 .page-title {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: clamp(1.35rem, 6vw, 2rem);
-  font-weight: 800;
-  line-height: 1.2;
+  font-size: clamp(1.75rem, 4.5vw, 2.5rem);
   margin: 0;
 }
 
-.page-title svg {
-  flex-shrink: 0;
-}
-
 .page-subtitle {
-  color: var(--text-muted);
-  margin: 0.25rem 0 0;
-  font-size: 0.95rem;
+  color: var(--muted);
+  font-size: var(--t-base);
+  margin: var(--sp-2) 0 0;
+  max-width: 58ch;
 }
 
-@media (max-width: 640px) {
-  .page-header {
-    align-items: flex-start;
-    margin-bottom: 1.25rem;
-  }
-
-  .page-header > .btn {
-    width: 100%;
-  }
-
-  .page-subtitle {
-    font-size: 0.85rem;
-  }
+/* A second movement on the same page — carries no header of its own, so the
+   space above it is what marks the change of subject. */
+.page-section {
+  margin-top: var(--sp-7);
 }
 
-/* Plain Buttons */
+/* ============================================================================
+   Buttons
+   ========================================================================= */
+
 .btn {
-  padding: 6px 12px;
-  font-size: 0.9rem;
-  border: 1px solid #999;
-  border-radius: 3px;
-  background: #e9e9e9;
-  color: #000;
+  font-family: var(--body);
+  font-size: var(--t-sm);
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 0.5625rem 0.9375rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--ink);
   cursor: pointer;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 0.4rem;
   white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .btn:hover {
-  background: #ddd;
+  border-color: var(--ink);
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: var(--safelight);
+  border-color: var(--safelight);
   color: #fff;
-  border-color: var(--primary-dark);
 }
 
 .btn-primary:hover {
-  background: var(--primary-dark);
+  background: var(--safelight-deep);
+  border-color: var(--safelight-deep);
 }
 
 .btn-secondary {
   background: #fff;
-  color: #333;
+  border-color: var(--rule-strong);
+  color: var(--ink);
 }
 
 .btn-sm {
-  padding: 4px 8px;
-  font-size: 0.8rem;
+  padding: 0.375rem 0.625rem;
+  font-size: var(--t-xs);
 }
 
-/* Several buttons are disabled while a request is in flight, so they need to
-   look different from an enabled one. */
+/* Buttons are disabled while a request is in flight, so they need to read as
+   unavailable rather than merely faded. */
 .btn:disabled {
-  opacity: 0.55;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .btn:disabled:hover {
-  background: #e9e9e9;
+  border-color: var(--rule-strong);
+  background: #fff;
 }
 
 .btn-primary:disabled:hover {
-  background: var(--primary);
+  background: var(--safelight);
+  border-color: var(--safelight);
 }
 
-.btn:focus-visible {
-  outline: 2px solid var(--primary);
+.btn-block {
+  width: 100%;
+}
+
+.btn:focus-visible,
+.nav-link:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--safelight);
   outline-offset: 2px;
 }
 
-/* Plain Forms */
+/* Quiet inline link — used for "back to…" and secondary navigation. */
+.link-quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.link-quiet:hover {
+  color: var(--ink);
+}
+
+.link-accent {
+  color: var(--safelight);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.link-accent:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================================
+   Forms
+   ========================================================================= */
+
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: var(--sp-4);
 }
 
 .form-label {
   display: block;
-  font-weight: bold;
-  margin-bottom: 5px;
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  color: var(--muted);
+  margin-bottom: var(--sp-2);
 }
 
-.form-input, .form-textarea {
+.form-input,
+.form-textarea {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  font-size: 0.9rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: #fff;
+  font-family: var(--body);
+  font-size: var(--t-base);
+  color: var(--ink);
 }
 
-.form-input:focus, .form-textarea:focus {
-  border-color: var(--primary);
-  outline: 2px solid var(--primary);
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: #9d9aa6;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  border-color: var(--safelight);
+  outline: 2px solid var(--safelight);
   outline-offset: 1px;
 }
 
-.glass-panel {
-  border: 1px solid #ccc;
-  padding: 20px;
-  margin-bottom: 20px;
-  background: #fff;
+/* Input with a leading icon. The icon is decorative — the label carries the
+   meaning — so it never takes pointer events. */
+.field {
+  position: relative;
 }
 
-/* Compact one-line upload control, used in place of a tall dropzone so the
-   photo grid stays near the top of the page. Files can still be dropped on it. */
+.field-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.field .form-input {
+  padding-left: 2.5rem;
+}
+
+/* ============================================================================
+   Panels
+   ========================================================================= */
+
+.panel {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-5);
+}
+
+.panel-flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ============================================================================
+   Upload bar
+   ========================================================================= */
+
+.upload-zone {
+  margin-bottom: var(--sp-6);
+}
+
 .upload-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--sp-3);
   flex-wrap: wrap;
-  padding: 4px 0;
+  padding: var(--sp-1) 0;
 }
 
-/* UploadForm toggles .drag-active while a file is held over this row. Files can
-   still be dropped here even though nothing advertises it. */
+/* UploadForm toggles this while a file is held over the row. Nothing
+   advertises the drop target, but it works. */
 .upload-bar.drag-active {
-  outline: 2px dashed var(--primary);
-  outline-offset: 6px;
+  outline: 2px dashed var(--safelight);
+  outline-offset: 8px;
 }
 
-.image-preview-container {
+.upload-status {
+  font-family: var(--mono);
+  font-size: var(--t-sm);
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.upload-tray {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-sunk);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-4);
+  max-height: 420px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--sp-3);
+}
+
+.upload-tray-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.upload-item {
   position: relative;
-  max-width: 280px;
-  max-height: 200px;
-  margin: 10px auto;
-  border: 1px solid #ccc;
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: var(--sp-2);
+}
+
+.upload-item-thumb {
+  width: 100%;
+  height: 130px;
   overflow: hidden;
-  border-radius: 4px;
-  background: #f8f9fa;
+  background: var(--paper-sunk);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.image-preview {
+.upload-item-thumb img {
   max-width: 100%;
-  max-height: 200px;
+  max-height: 100%;
   object-fit: contain;
 }
 
-.clear-preview-btn {
+.upload-item .form-input {
+  margin-top: var(--sp-2);
+  font-size: var(--t-sm);
+  padding: 0.375rem 0.5rem;
+}
+
+/* Small circular dismiss control, shared by the upload tray and the lightbox. */
+.icon-btn {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
+  top: var(--sp-1);
+  right: var(--sp-1);
+  z-index: 2;
   width: 24px;
   height: 24px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: rgba(23, 22, 27, 0.72);
+  color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Plain Cards and Grids */
+.icon-btn:hover {
+  background: var(--ink);
+}
+
+.upload-actions {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+/* ============================================================================
+   Contact sheet — the signature
+   ----------------------------------------------------------------------------
+   Photos genuinely arrive in dated batches, so each date becomes a sheet: a
+   header naming the day, a mono frame count, and the frames themselves.
+   ========================================================================= */
+
+.sheet {
+  margin-bottom: var(--sp-7);
+}
+
+/* No rule under it — the date and its frame count sit directly above the grid,
+   so the space alone does the separating. */
+.sheet-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+
+/* Explicit weight: this is an h2, so without it the heading rule's 700 wins. */
+.sheet-date {
+  font-family: var(--display);
+  font-size: var(--t-md);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.sheet-count {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 .photo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr));
+  gap: var(--sp-3);
 }
 
-/* PhotoGrid applies "photo-card glass-panel" together, so this cancels the
-   panel's border and padding. Deliberately two classes: that outranks any
-   single-class .glass-panel rule regardless of source order, including the
-   padding override inside the phone media query below. */
-.photo-card.glass-panel {
-  border: none;
-  padding: 0;
-  margin: 0;
-  background: #fff;
+.photo-card {
+  position: relative;
 }
 
+/* The print: a white margin, the way a photograph sits on a contact sheet. */
 .photo-img-wrapper {
+  position: relative;
+  display: block;
   width: 100%;
-  aspect-ratio: 1/1;
-  overflow: hidden;
-  background: #eee;
+  aspect-ratio: 1 / 1;
+  padding: 5px;
+  background: #fff;
   cursor: pointer;
-}
-
-.photo-img-wrapper:hover .photo-img {
-  opacity: 0.85;
-}
-
-.photo-img-wrapper:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+  overflow: hidden;
 }
 
 .photo-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  background: var(--paper-sunk);
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
-.photo-group {
-  margin-bottom: 2rem;
+.photo-img-wrapper:hover .photo-img {
+  transform: scale(1.04);
 }
 
-.photo-group-date {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin: 0 0 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #eee;
+.photo-img-wrapper:focus-visible {
+  outline: 2px solid var(--safelight);
+  outline-offset: 2px;
+}
+
+/* Frame number, in the margin of the print. Hidden until hover or focus so the
+   sheet stays quiet when you're just looking. */
+.frame-index {
+  position: absolute;
+  left: 5px;
+  bottom: 5px;
+  font-family: var(--mono);
+  font-size: var(--t-2xs);
+  letter-spacing: 0.1em;
+  color: #fff;
+  background: rgba(23, 22, 27, 0.78);
+  padding: 1px 5px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.photo-img-wrapper:hover .frame-index,
+.photo-img-wrapper:focus-visible .frame-index {
+  opacity: 1;
 }
 
 .photo-body {
-  padding-top: 6px;
+  padding-top: var(--sp-2);
 }
 
 .photo-meta {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 5px;
-  font-size: 0.7rem;
-  color: #555;
+  gap: var(--sp-1);
 }
 
-/* Plain Badges */
+/* ============================================================================
+   Badges
+   ========================================================================= */
+
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 6px;
-  font-size: 0.75rem;
-  border-radius: 3px;
-  background: #eee;
-  border: 1px solid #ccc;
+  gap: 0.3rem;
+  font-family: var(--mono);
+  font-size: var(--t-2xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--ink-soft);
   white-space: nowrap;
 }
 
-/* Red family, escalating with privilege level */
-.badge-guest { background: #fdf5f5; border-color: #ecd5d5; color: #7a5c5c; }
-.badge-user { background: #fdecec; border-color: #f3b0b0; color: var(--primary-dark); }
-.badge-admin { background: #f9c9c9; border-color: #e07a7a; color: #7a0000; }
-.badge-superadmin { background: var(--primary); border-color: var(--primary-dark); color: #ffffff; }
+/* Escalating with privilege: from paper, to a wash, to solid safelight. */
+.badge-guest {
+  color: var(--muted);
+}
 
-/* Plain Modal */
+.badge-user {
+  border-color: var(--rule-strong);
+  color: var(--ink);
+}
+
+.badge-admin {
+  background: var(--safelight-wash);
+  border-color: #eab8bf;
+  color: var(--safelight-deep);
+}
+
+.badge-superadmin {
+  background: var(--safelight);
+  border-color: var(--safelight);
+  color: #fff;
+}
+
+/* ============================================================================
+   Modal & lightbox
+   ========================================================================= */
+
 .modal-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(23, 22, 27, 0.72);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: var(--sp-4);
 }
 
 .modal-card {
   background: #fff;
-  padding: 20px;
-  border: 1px solid #333;
-  max-width: 400px;
-  width: 100%;
-}
-
-.modal-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  margin: 0 auto 1rem;
-  border-radius: var(--radius-full);
-  background: #fdecec;
-  color: var(--primary);
-}
-
-/* Lightbox */
-.lightbox-card {
-  position: relative;
-  background: #fff;
-  border-radius: 4px;
-  max-width: 720px;
+  border-radius: var(--radius);
+  padding: var(--sp-6);
+  max-width: 420px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  margin: 20px;
+}
+
+.modal-title {
+  font-family: var(--display);
+  font-size: var(--t-lg);
+  margin: 0 0 var(--sp-2);
+}
+
+.modal-text {
+  color: var(--ink-soft);
+  font-size: var(--t-base);
+  margin-bottom: var(--sp-4);
+}
+
+/* Needs an explicit size: as a full-width block-level flex container the
+   auto margin would have nothing to push against, and the icon would sit on
+   the left instead of the right. */
+.modal-close {
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  color: var(--ink);
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* Inline advisory. A left rule rather than a full box — it's an aside, not an
+   alarm. */
+.notice {
+  border-left: 3px solid var(--warn);
+  background: var(--warn-wash);
+  color: #6d4a08;
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-5);
+  font-size: var(--t-sm);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  text-align: left;
+}
+
+.notice code {
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.02em;
+}
+
+.lightbox-card {
+  position: relative;
+  background: #fff;
+  border-radius: var(--radius);
+  max-width: 860px;
+  width: 100%;
+  max-height: 92vh;
+  overflow-y: auto;
 }
 
 .lightbox-close {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  z-index: 3;
   width: 32px;
   height: 32px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: rgba(23, 22, 27, 0.72);
+  color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -472,34 +1016,34 @@ body {
 }
 
 .lightbox-close:hover {
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--ink);
 }
 
 .lightbox-stage {
   position: relative;
+  background: var(--paper-sunk);
 }
 
 .lightbox-img {
   display: block;
   width: 100%;
-  /* Phone photos are tall portraits (e.g. 1170x2532). Without a height cap they
-     render far past the card's 90vh and the lightbox turns into a scroller. The
-     subtracted space leaves room for .lightbox-info below the image. */
-  max-height: calc(90vh - 140px);
+  /* Phone photos are tall portraits (e.g. 1170x2532). Without a cap they run
+     past the card and the lightbox turns into a scroller. The subtracted space
+     leaves room for .lightbox-info below. */
+  max-height: calc(92vh - 150px);
   object-fit: contain;
-  background: #f2f2f2;
 }
 
 .lightbox-nav {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
   width: 40px;
   height: 40px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: rgba(23, 22, 27, 0.6);
+  color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -507,53 +1051,107 @@ body {
 }
 
 .lightbox-nav:hover {
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--ink);
 }
 
 .lightbox-nav-prev {
-  left: 10px;
+  left: var(--sp-3);
 }
 
 .lightbox-nav-next {
-  right: 10px;
-}
-
-.lightbox-counter {
-  margin-left: auto;
+  right: var(--sp-3);
 }
 
 .lightbox-info {
-  padding: 15px;
+  padding: var(--sp-4) var(--sp-5) var(--sp-5);
 }
 
 .lightbox-caption {
-  font-size: 1rem;
+  font-family: var(--display);
+  font-size: var(--t-md);
   font-weight: 600;
-  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--sp-3);
   overflow-wrap: anywhere;
 }
 
 .lightbox-caption-empty {
+  font-family: var(--body);
   font-weight: 400;
   font-style: italic;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 
 .lightbox-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 16px;
-  font-size: 0.8rem;
-  color: var(--text-muted);
+  gap: var(--sp-2) var(--sp-5);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  letter-spacing: 0.04em;
+  color: var(--muted);
 }
 
 .lightbox-meta span {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 0.35rem;
 }
 
-/* Plain Table */
+.lightbox-counter {
+  margin-left: auto;
+  color: var(--ink);
+}
+
+/* ============================================================================
+   Stats — hairline grid, no cards
+   ========================================================================= */
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: var(--sp-6);
+}
+
+.stat {
+  background: #fff;
+  padding: var(--sp-4) var(--sp-5);
+}
+
+.stat-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  color: var(--muted);
+}
+
+.stat-value {
+  font-family: var(--display);
+  font-size: var(--t-xl);
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  /* Numerals only, so they line up column to column as the counts change. */
+  font-variant-numeric: tabular-nums;
+  margin-top: var(--sp-1);
+}
+
+.stat-value-accent {
+  color: var(--safelight);
+}
+
+/* ============================================================================
+   Tables
+   ========================================================================= */
+
 .table-container {
   width: 100%;
   overflow-x: auto;
@@ -563,89 +1161,333 @@ body {
 .custom-table {
   width: 100%;
   border-collapse: collapse;
-}
-
-.custom-table th, .custom-table td {
-  border: 1px solid #ccc;
-  padding: 8px;
-  text-align: left;
+  font-size: var(--t-sm);
 }
 
 .custom-table th {
-  background: #f2f2f2;
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  color: var(--muted);
+  text-align: left;
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--ink);
+  white-space: nowrap;
+}
+
+.custom-table td {
+  padding: var(--sp-3);
+  border-bottom: 1px solid var(--rule);
+  vertical-align: middle;
+}
+
+.custom-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-name {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* Share codes get read aloud and typed by hand, so they need mono and wide
+   tracking to keep 0/O and 1/l apart. */
+.gallery-code {
+  font-family: var(--mono);
+  font-size: var(--t-lg);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+}
+
+.gallery-code-sm {
+  font-size: var(--t-base);
+}
+
+/* ============================================================================
+   Alerts & states
+   ========================================================================= */
+
+.alert-error,
+.alert-success {
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-4);
+  font-size: var(--t-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  text-align: left;
 }
 
 .alert-error {
-  background: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-  padding: 10px;
-  margin-bottom: 15px;
-  border-radius: 3px;
+  border-left: 3px solid var(--safelight);
+  background: var(--safelight-wash);
+  color: #7a0a1c;
 }
 
 .alert-success {
-  background: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-  padding: 10px;
-  margin-bottom: 15px;
-  border-radius: 3px;
+  border-left: 3px solid var(--ok);
+  background: var(--ok-wash);
+  color: #1b5540;
 }
 
-/* Responsive: tablets and below */
+/* Loading / empty / error blocks. */
+.state {
+  text-align: center;
+  padding: var(--sp-8) var(--sp-4);
+  color: var(--muted);
+}
+
+.state-narrow {
+  max-width: 460px;
+  margin: var(--sp-7) auto;
+  text-align: center;
+}
+
+.state-title {
+  font-family: var(--display);
+  font-size: var(--t-lg);
+  margin: 0 0 var(--sp-2);
+  color: var(--ink);
+}
+
+.state-text {
+  color: var(--muted);
+  margin-bottom: var(--sp-5);
+}
+
+.state-mono {
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  color: var(--muted);
+}
+
+/* Empty contact sheet: a ruled, blank sheet rather than a big grey icon. */
+.state-empty {
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--radius);
+  padding: var(--sp-7) var(--sp-5);
+  text-align: center;
+  background: #fff;
+}
+
+/* ============================================================================
+   Auth
+   ========================================================================= */
+
+.auth {
+  max-width: var(--w-form);
+  margin: var(--sp-7) auto 0;
+}
+
+.auth-head {
+  text-align: center;
+  margin-bottom: var(--sp-6);
+}
+
+.auth-title {
+  font-size: var(--t-xl);
+  margin: 0;
+}
+
+.auth-sub {
+  color: var(--muted);
+  font-size: var(--t-sm);
+  margin-top: var(--sp-2);
+}
+
+.auth-foot {
+  text-align: center;
+  margin-top: var(--sp-5);
+  font-size: var(--t-sm);
+  color: var(--muted);
+}
+
+.auth-alt {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--rule);
+  text-align: center;
+}
+
+/* ============================================================================
+   Share panel
+   ========================================================================= */
+
+.share-grid {
+  display: flex;
+  gap: var(--sp-6);
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.share-main {
+  flex: 1 1 300px;
+  min-width: 0;
+}
+
+.share-qr {
+  text-align: center;
+}
+
+.share-qr svg {
+  display: block;
+  border: 1px solid var(--rule);
+  padding: var(--sp-2);
+  background: #fff;
+}
+
+.share-qr-label {
+  margin-top: var(--sp-2);
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  color: var(--muted);
+}
+
+/* ============================================================================
+   Motion
+   ========================================================================= */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+  color: var(--safelight);
+}
+
+/* One orchestrated entrance on the hero, nothing else. Scattered reveals make
+   a page feel restless. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.hero .eyebrow {
+  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+.hero .hero-title {
+  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) 0.06s both;
+}
+
+.hero .hero-sub {
+  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) 0.12s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================================
+   Responsive
+   ========================================================================= */
+
 @media (max-width: 768px) {
-  .navbar {
-    padding: 10px 15px;
+  .nav-content {
+    padding: var(--sp-3) var(--sp-4);
+    flex-wrap: wrap;
+    gap: var(--sp-3);
   }
 
   .nav-links {
-    gap: 12px;
+    gap: var(--sp-4);
+  }
+
+  .app-container {
+    padding: var(--sp-5) var(--sp-4) var(--sp-6);
+  }
+
+  .site-footer {
+    padding: var(--sp-4);
   }
 }
 
-/* Responsive: phones */
 @media (max-width: 640px) {
   .nav-content {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
   }
 
   .nav-links {
     width: 100%;
-    gap: 10px 14px;
+    gap: var(--sp-3) var(--sp-4);
   }
 
-  .app-container {
-    margin: 15px auto;
-    padding: 0 12px;
+  /* The masthead stacks here, so the avatar can end up near the left edge —
+     anchor the menu to its left or it opens off-screen. */
+  .nav-menu {
+    left: 0;
+    right: auto;
   }
 
-  .glass-panel {
-    padding: 15px;
+  .panel {
+    padding: var(--sp-4);
   }
 
-  /* Exactly 5 per row on phones. A fixed count rather than auto-fill with a min
-     width, so the number of columns can't drift with screen width — thumbnails
-     scale instead. */
+  .hero {
+    padding: var(--sp-5) 0;
+  }
+
+  .page-header {
+    align-items: flex-start;
+  }
+
+  .page-header > .btn {
+    width: 100%;
+  }
+
+  /* Exactly five per row on phones. A fixed count rather than auto-fill, so the
+     number of columns can't drift with screen width — thumbnails scale
+     instead. At this size the print margin would swallow the image, so it
+     goes flush. */
   .photo-grid {
     grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
+    gap: 4px;
+  }
+
+  .photo-img-wrapper {
+    padding: 0;
+  }
+
+  .frame-index {
+    display: none;
+  }
+
+  .sheet-head {
+    gap: var(--sp-2);
   }
 
   .modal-card {
-    max-width: 100%;
-    margin: 15px;
+    padding: var(--sp-5);
   }
-}
 
-/* Share codes get read aloud and typed by hand, so they need a monospace
-   stack and wide tracking to stay unambiguous. */
-.gallery-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 1.4rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--text-main);
+  .lightbox-info {
+    padding: var(--sp-4);
+  }
+
+  .share-grid {
+    gap: var(--sp-5);
+  }
 }
