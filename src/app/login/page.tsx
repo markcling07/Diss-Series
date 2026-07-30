@@ -33,7 +33,7 @@ export default function LoginPage() {
       if (data.user.role === 'ADMIN' || data.user.role === 'SUPER_ADMIN') {
         router.push('/admin/dashboard');
       } else {
-        router.push('/profile');
+        router.push('/galleries');
       }
       router.refresh();
     } catch (err: any) {

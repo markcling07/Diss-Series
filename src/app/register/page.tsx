@@ -31,7 +31,7 @@ export default function RegisterPage() {
         throw new Error(data.error || 'We couldn’t create that account.');
       }
 
-      router.push('/profile');
+      router.push('/galleries');
       router.refresh();
     } catch (err: any) {
       setError(err.message);

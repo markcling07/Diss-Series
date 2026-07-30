@@ -88,15 +88,6 @@ export default function Navbar() {
 
           {user && (
             <Link
-              href="/profile"
-              className={`nav-link ${pathname === '/profile' ? 'active' : ''}`}
-            >
-              My uploads
-            </Link>
-          )}
-
-          {user && (
-            <Link
               href="/galleries"
               className={`nav-link ${pathname.startsWith('/galleries') ? 'active' : ''}`}
             >

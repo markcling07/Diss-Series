@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AlertCircle, FolderPlus, Loader2 } from 'lucide-react';
+import PhotoGrid, { PhotoItem } from '@/components/PhotoGrid';
 
 interface Gallery {
   id: string;
@@ -14,6 +15,7 @@ interface Gallery {
 
 export default function GalleriesPage() {
   const [galleries, setGalleries] = useState<Gallery[]>([]);
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [signedOut, setSignedOut] = useState(false);
   const [name, setName] = useState('');
@@ -21,24 +23,34 @@ export default function GalleriesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchGalleries();
+    fetchPageData();
   }, []);
 
-  const fetchGalleries = async () => {
+  // Both halves of the page belong to the same account, so they load together
+  // and share one signed-out state.
+  const fetchPageData = async () => {
     try {
-      const res = await fetch('/api/galleries');
-      const data = await res.json();
+      const [galleriesRes, photosRes] = await Promise.all([
+        fetch('/api/galleries'),
+        fetch('/api/photos/mine'),
+      ]);
 
-      if (res.status === 401) {
+      if (galleriesRes.status === 401 || photosRes.status === 401) {
         setSignedOut(true);
         return;
       }
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to load galleries');
+      const galleriesData = await galleriesRes.json();
+      if (!galleriesRes.ok) {
+        throw new Error(galleriesData.error || 'Failed to load galleries');
       }
+      setGalleries(galleriesData.galleries);
 
-      setGalleries(data.galleries);
+      const photosData = await photosRes.json();
+      if (!photosRes.ok) {
+        throw new Error(photosData.error || 'Failed to load photos');
+      }
+      setPhotos(photosData.photos);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -188,6 +200,26 @@ export default function GalleriesPage() {
           </div>
         </div>
       )}
+
+      {/* Everything this account has uploaded, wherever it went. Lives here now
+          that the separate uploads page is gone. */}
+      <section className="page-section">
+        <div className="page-section-head">
+          <div>
+            <span className="eyebrow">Your photos</span>
+            <h2 className="page-section-title">Everything you&rsquo;ve added.</h2>
+          </div>
+          <span className="sheet-count">
+            {photos.length === 1 ? '1 photo' : `${photos.length} photos`}
+          </span>
+        </div>
+
+        <PhotoGrid
+          photos={photos}
+          showUploaderInfo={false}
+          emptyMessage="You haven't uploaded anything yet. Add a photo from the homepage, or open a gallery above."
+        />
+      </section>
     </div>
   );
 }

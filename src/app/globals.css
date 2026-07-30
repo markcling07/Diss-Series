@@ -449,6 +449,28 @@ a {
   max-width: 58ch;
 }
 
+/* A second movement on the same page. Sits a step below .page-header in scale
+   so it reads as part of this page rather than the start of a new one. */
+.page-section {
+  margin-top: var(--sp-7);
+}
+
+.page-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: var(--sp-5);
+}
+
+.page-section-title {
+  font-size: clamp(1.375rem, 3vw, 1.75rem);
+  margin: 0;
+}
+
 /* ============================================================================
    Buttons
    ========================================================================= */
