@@ -165,8 +165,11 @@ export default function GalleryPage() {
         </div>
       )}
 
+      {/* Uploader badges are omitted here to keep the grid to pure thumbnails;
+          who uploaded what is still shown in the lightbox. */}
       <PhotoGrid
         photos={photos}
+        showUploaderInfo={false}
         emptyMessage="No photos in this gallery yet — be the first to upload!"
       />
     </div>

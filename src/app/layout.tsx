@@ -28,7 +28,7 @@ export default function RootLayout({
       <body>
         <Navbar />
         <main className="app-container">{children}</main>
-        <footer style={{ textAlign: 'center', padding: '3rem 1rem 2rem', color: 'var(--text-dark)', fontSize: '0.85rem' }}>
+        <footer className="site-footer">
           DissPic &copy; {new Date().getFullYear()} — Photo Upload Platform & Admin Portal
         </footer>
       </body>
