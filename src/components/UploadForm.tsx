@@ -16,9 +16,12 @@ interface Props {
   // When set, uploads are scoped to this gallery instead of the general pool.
   galleryCode?: string;
   onUploaded?: () => void;
+  // Rendered on the same row as the select-photos button, so callers can put
+  // their own controls (e.g. Share) beside it instead of elsewhere on the page.
+  actions?: React.ReactNode;
 }
 
-export default function UploadForm({ galleryCode, onUploaded }: Props = {}) {
+export default function UploadForm({ galleryCode, onUploaded, actions }: Props = {}) {
   const [items, setItems] = useState<PreviewItem[]>([]);
   const [generalCaption, setGeneralCaption] = useState('');
   const [isDragActive, setIsDragActive] = useState(false);
@@ -227,6 +230,8 @@ export default function UploadForm({ galleryCode, onUploaded }: Props = {}) {
                 <UploadCloud size={18} />
                 <span>Select photos</span>
               </button>
+
+              {actions}
             </div>
           ) : (
             /* STEP 2: PREVIEW ALL SELECTED IMAGES BEFORE UPLOAD */

@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
-import { AlertCircle, Check, Copy, LayoutGrid, Loader2 } from 'lucide-react';
+import { AlertCircle, Check, Copy, LayoutGrid, Loader2, Share2 } from 'lucide-react';
 import PhotoGrid, { PhotoItem } from '@/components/PhotoGrid';
 import UploadForm from '@/components/UploadForm';
 
@@ -23,6 +23,7 @@ export default function GalleryPage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
+  const [showShare, setShowShare] = useState(false);
 
   const fetchGallery = useCallback(async () => {
     try {
@@ -108,41 +109,61 @@ export default function GalleryPage() {
         </div>
       </div>
 
-      <div className="glass-panel">
-        <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-          <div style={{ flex: '1 1 300px', minWidth: 0 }}>
-            <label className="form-label">Gallery code</label>
-            <div className="gallery-code" style={{ marginBottom: '1rem' }}>{gallery.code}</div>
+      <UploadForm
+        galleryCode={gallery.code}
+        onUploaded={fetchGallery}
+        actions={
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setShowShare((open) => !open)}
+            aria-expanded={showShare}
+            aria-controls="share-panel"
+          >
+            <Share2 size={18} />
+            <span>{showShare ? 'Hide share info' : 'Share'}</span>
+          </button>
+        }
+      />
 
-            <label className="form-label" htmlFor="share-url">Share link</label>
-            <input
-              id="share-url"
-              className="form-input"
-              type="text"
-              value={shareUrl}
-              readOnly
-              onFocus={(e) => e.currentTarget.select()}
-              style={{ marginBottom: '0.75rem' }}
-            />
+      {/* Collapsed by default: the code, link and QR are only needed when
+          inviting people, so they shouldn't push the photos down the page.
+          Rendered after the upload row so it expands directly below its button. */}
+      {showShare && (
+        <div className="glass-panel" id="share-panel">
+          <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            <div style={{ flex: '1 1 300px', minWidth: 0 }}>
+              <label className="form-label">Gallery code</label>
+              <div className="gallery-code" style={{ marginBottom: '1rem' }}>{gallery.code}</div>
 
-            <button type="button" className="btn btn-secondary btn-sm" onClick={handleCopy}>
-              {copied ? <Check size={14} /> : <Copy size={14} />}
-              <span>{copied ? 'Copied' : 'Copy link'}</span>
-            </button>
-          </div>
+              <label className="form-label" htmlFor="share-url">Share link</label>
+              <input
+                id="share-url"
+                className="form-input"
+                type="text"
+                value={shareUrl}
+                readOnly
+                onFocus={(e) => e.currentTarget.select()}
+                style={{ marginBottom: '0.75rem' }}
+              />
 
-          {shareUrl && (
-            <div style={{ textAlign: 'center' }}>
-              <QRCodeSVG value={shareUrl} size={160} />
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                Scan to join
-              </p>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={handleCopy}>
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                <span>{copied ? 'Copied' : 'Copy link'}</span>
+              </button>
             </div>
-          )}
-        </div>
-      </div>
 
-      <UploadForm galleryCode={gallery.code} onUploaded={fetchGallery} />
+            {shareUrl && (
+              <div style={{ textAlign: 'center' }}>
+                <QRCodeSVG value={shareUrl} size={160} />
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                  Scan to join
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <PhotoGrid
         photos={photos}
