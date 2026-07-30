@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
+import { normalizeCode } from '@/lib/gallery';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
@@ -10,6 +11,7 @@ export async function POST(req: Request) {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
     const caption = formData.get('caption') as string | null;
+    const galleryCode = formData.get('galleryCode') as string | null;
 
     if (!file) {
       return NextResponse.json({ error: 'No image file provided' }, { status: 400 });
@@ -29,6 +31,23 @@ export async function POST(req: Request) {
 
     // Check if user is logged in
     const authUser = await getAuthUser();
+
+    // Resolve the gallery before anything touches disk, so a bad code can't
+    // leave an orphaned file in public/uploads. Only the public code is
+    // accepted here — never a galleryId supplied by the client.
+    let galleryId: string | null = null;
+    if (galleryCode) {
+      const gallery = await prisma.gallery.findUnique({
+        where: { code: normalizeCode(galleryCode) },
+        select: { id: true },
+      });
+
+      if (!gallery) {
+        return NextResponse.json({ error: 'Invalid gallery code' }, { status: 400 });
+      }
+
+      galleryId = gallery.id;
+    }
 
     // Prepare upload directory
     const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
@@ -53,6 +72,7 @@ export async function POST(req: Request) {
         mimeType: file.type,
         size: file.size,
         userId: authUser ? authUser.id : null,
+        galleryId,
       },
       include: {
         user: {

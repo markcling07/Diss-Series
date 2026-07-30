@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Camera, User, LogOut, Shield, History, Upload } from 'lucide-react';
+import { Camera, User, LogOut, Shield, History, Upload, LayoutGrid } from 'lucide-react';
 
 interface AuthUser {
   id: string;
@@ -60,6 +60,13 @@ export default function Navbar() {
             <Link href="/profile" className={`nav-link ${pathname === '/profile' ? 'active' : ''}`}>
               <History size={18} />
               <span>My Uploads</span>
+            </Link>
+          )}
+
+          {user && (
+            <Link href="/galleries" className={`nav-link ${pathname.startsWith('/galleries') ? 'active' : ''}`}>
+              <LayoutGrid size={18} />
+              <span>My Galleries</span>
             </Link>
           )}
 

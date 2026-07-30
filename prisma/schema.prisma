@@ -8,12 +8,25 @@ generator client {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  email     String   @unique
+  id        String    @id @default(cuid())
+  username  String    @unique
+  email     String    @unique
   password  String
-  role      String   @default("USER") // USER, ADMIN, SUPER_ADMIN
+  role      String    @default("USER") // USER, ADMIN, SUPER_ADMIN
+  createdAt DateTime  @default(now())
+  photos    Photo[]
+  galleries Gallery[]
+}
+
+// A shared room for one group's photos. The share code is the permission:
+// anyone holding it can upload to and view this gallery, no account needed.
+model Gallery {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
   createdAt DateTime @default(now())
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   photos    Photo[]
 }
 
@@ -27,4 +40,6 @@ model Photo {
   createdAt    DateTime @default(now())
   userId       String?
   user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  galleryId    String?
+  gallery      Gallery? @relation(fields: [galleryId], references: [id], onDelete: SetNull)
 }

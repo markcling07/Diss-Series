@@ -534,3 +534,13 @@ body {
     margin: 15px;
   }
 }
+
+/* Share codes get read aloud and typed by hand, so they need a monospace
+   stack and wide tracking to stay unambiguous. */
+.gallery-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text-main);
+}

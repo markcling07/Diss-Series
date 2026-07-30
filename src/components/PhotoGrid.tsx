@@ -14,7 +14,8 @@ export interface PhotoItem {
   createdAt: string;
   user?: {
     username: string;
-    email: string;
+    // Optional: public gallery responses deliberately omit email.
+    email?: string;
   } | null;
 }
 

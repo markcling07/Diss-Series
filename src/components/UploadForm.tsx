@@ -12,7 +12,13 @@ interface PreviewItem {
   caption: string;
 }
 
-export default function UploadForm() {
+interface Props {
+  // When set, uploads are scoped to this gallery instead of the general pool.
+  galleryCode?: string;
+  onUploaded?: () => void;
+}
+
+export default function UploadForm({ galleryCode, onUploaded }: Props = {}) {
   const [items, setItems] = useState<PreviewItem[]>([]);
   const [generalCaption, setGeneralCaption] = useState('');
   const [isDragActive, setIsDragActive] = useState(false);
@@ -109,6 +115,7 @@ export default function UploadForm() {
         const formData = new FormData();
         formData.append('file', item.file);
         if (combinedCaption) formData.append('caption', combinedCaption);
+        if (galleryCode) formData.append('galleryCode', galleryCode);
 
         const res = await fetch('/api/upload', {
           method: 'POST',
@@ -134,8 +141,11 @@ export default function UploadForm() {
           : `All ${successCount} photos uploaded successfully!`
       );
       handleClearAll();
+      onUploaded?.();
 
-      if (hasGuestUpload) {
+      // Inside a gallery the whole point is that no account is needed, so don't
+      // nag guests to sign up there. Elsewhere the prompt is unchanged.
+      if (hasGuestUpload && !galleryCode) {
         setShowModal(true);
       }
     } catch (err: any) {

@@ -1,5 +1,6 @@
 import './globals.css';
 import { Metadata } from 'next';
+import Navbar from '@/components/Navbar';
 
 export const metadata: Metadata = {
   title: 'DissPic | Photo Upload',
@@ -14,6 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <Navbar />
         <main className="app-container">{children}</main>
         <footer style={{ textAlign: 'center', padding: '3rem 1rem 2rem', color: 'var(--text-dark)', fontSize: '0.85rem' }}>
           DissPic &copy; {new Date().getFullYear()} — Photo Upload Platform & Admin Portal
