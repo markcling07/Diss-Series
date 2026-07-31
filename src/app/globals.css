@@ -1450,29 +1450,6 @@ a:focus-visible {
   .nav-session .btn {
     padding: 0.4rem 0.6rem;
   }
-}
-
-/* Smallest phones still in use (iPhone SE at 320px). The signed-out masthead is
-   the widest case — logo plus two buttons — so it needs the extra squeeze. */
-@media (max-width: 380px) {
-  .nav-content {
-    gap: var(--sp-2);
-    padding-left: var(--sp-3);
-    padding-right: var(--sp-3);
-  }
-
-  .nav-links {
-    gap: var(--sp-2);
-  }
-
-  .nav-link,
-  .nav-session .btn {
-    font-size: var(--t-2xs);
-  }
-
-  .nav-session .btn {
-    padding: 0.35rem 0.5rem;
-  }
 
   .panel {
     padding: var(--sp-4);
@@ -1480,6 +1457,23 @@ a:focus-visible {
 
   .hero {
     padding: var(--sp-5) 0;
+  }
+
+  /* Sized to hold the headline on a single line. Measured: the copy needs about
+     6vw to fit the content width from 320px up, so it scales with the screen
+     rather than wrapping at one size and not another. The 18ch cap is dropped
+     because it would force a break regardless of type size. If the headline
+     copy ever gets longer it will wrap again rather than overflow — which is
+     the safer failure. */
+  .hero-title {
+    font-size: clamp(1.15rem, 6vw, 2.375rem);
+    line-height: 1.15;
+    max-width: none;
+  }
+
+  .hero-sub {
+    margin-top: var(--sp-3);
+    font-size: var(--t-base);
   }
 
   .page-header {
@@ -1521,5 +1515,28 @@ a:focus-visible {
 
   .share-grid {
     gap: var(--sp-5);
+  }
+}
+
+/* Smallest phones still in use (iPhone SE at 320px). The signed-out masthead is
+   the widest case — logo plus two buttons — so it needs the extra squeeze. */
+@media (max-width: 380px) {
+  .nav-content {
+    gap: var(--sp-2);
+    padding-left: var(--sp-3);
+    padding-right: var(--sp-3);
+  }
+
+  .nav-links {
+    gap: var(--sp-2);
+  }
+
+  .nav-link,
+  .nav-session .btn {
+    font-size: var(--t-2xs);
+  }
+
+  .nav-session .btn {
+    padding: 0.35rem 0.5rem;
   }
 }
