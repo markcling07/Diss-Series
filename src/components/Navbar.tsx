@@ -82,10 +82,6 @@ export default function Navbar() {
         {/* Labels only. At this size a row of icons alongside mono capitals
             reads as clutter, and the words are unambiguous on their own. */}
         <nav className="nav-links">
-          <Link href="/" className={`nav-link ${pathname === '/' ? 'active' : ''}`}>
-            Upload
-          </Link>
-
           {user && (
             <Link
               href="/galleries"
