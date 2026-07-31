@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
-import { Check, Copy, Loader2, Share2 } from 'lucide-react';
+import { Check, Copy, Loader2, Lock, LockOpen, Share2 } from 'lucide-react';
 import PhotoGrid, { PhotoItem } from '@/components/PhotoGrid';
 import UploadForm from '@/components/UploadForm';
 
@@ -12,6 +12,7 @@ interface Gallery {
   id: string;
   code: string;
   name: string;
+  isOpen: boolean;
   createdAt: string;
 }
 
@@ -24,6 +25,8 @@ export default function GalleryPage() {
   const [copied, setCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [showShare, setShowShare] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [toggling, setToggling] = useState(false);
 
   const fetchGallery = useCallback(async () => {
     try {
@@ -36,12 +39,38 @@ export default function GalleryPage() {
 
       setGallery(data.gallery);
       setPhotos(data.photos);
+      setIsOwner(data.isOwner);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   }, [code]);
+
+  const handleToggleOpen = async () => {
+    if (!gallery) return;
+    setToggling(true);
+
+    try {
+      const res = await fetch(`/api/galleries/${gallery.code}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isOpen: !gallery.isOpen }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update gallery');
+      }
+
+      setGallery((g) => (g ? { ...g, isOpen: data.gallery.isOpen } : g));
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setToggling(false);
+    }
+  };
 
   useEffect(() => {
     fetchGallery();
@@ -93,6 +122,38 @@ export default function GalleryPage() {
     );
   }
 
+  const shareButton = (
+    <button
+      type="button"
+      className="btn btn-secondary"
+      onClick={() => setShowShare((open) => !open)}
+      aria-expanded={showShare}
+      aria-controls="share-panel"
+    >
+      <Share2 size={16} />
+      <span>{showShare ? 'Hide share info' : 'Share'}</span>
+    </button>
+  );
+
+  // Only the owner sees this. Everyone else just sees the result: an upload
+  // form, or no upload form.
+  const ownerToggle = isOwner ? (
+    <button
+      type="button"
+      className="btn btn-secondary"
+      onClick={handleToggleOpen}
+      disabled={toggling}
+      title={
+        gallery.isOpen
+          ? 'Stop accepting photos — the link becomes view-only'
+          : 'Accept photos again from anyone with the link'
+      }
+    >
+      {gallery.isOpen ? <Lock size={16} /> : <LockOpen size={16} />}
+      <span>{toggling ? 'Saving…' : gallery.isOpen ? 'Close gallery' : 'Reopen gallery'}</span>
+    </button>
+  ) : null;
+
   return (
     <div>
       <div className="page-header">
@@ -100,28 +161,29 @@ export default function GalleryPage() {
           <span className="eyebrow">Gallery · {gallery.code}</span>
           <h1 className="page-title">{gallery.name}</h1>
           <p className="page-subtitle">
-            {photos.length === 1 ? '1 photo' : `${photos.length} photos`} · anyone with
-            this link can add to it
+            {photos.length === 1 ? '1 photo' : `${photos.length} photos`} ·{' '}
+            {gallery.isOpen
+              ? 'anyone with this link can add to it'
+              : 'closed — view only'}
           </p>
         </div>
       </div>
 
-      <UploadForm
-        galleryCode={gallery.code}
-        onUploaded={fetchGallery}
-        actions={
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => setShowShare((open) => !open)}
-            aria-expanded={showShare}
-            aria-controls="share-panel"
-          >
-            <Share2 size={16} />
-            <span>{showShare ? 'Hide share info' : 'Share'}</span>
-          </button>
-        }
-      />
+      {/* The share button and the owner's open/close control belong together on
+          one row. When the gallery is closed there is no upload form to hang
+          them off, so they get their own row instead. */}
+      {gallery.isOpen ? (
+        <UploadForm
+          galleryCode={gallery.code}
+          onUploaded={fetchGallery}
+          actions={<>{shareButton}{ownerToggle}</>}
+        />
+      ) : (
+        <div className="upload-bar">
+          {shareButton}
+          {ownerToggle}
+        </div>
+      )}
 
       {/* Collapsed by default: the code, link and QR are only needed when
           inviting people, so they shouldn't push the photos down the page.

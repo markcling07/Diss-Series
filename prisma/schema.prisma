@@ -24,6 +24,10 @@ model Gallery {
   id        String   @id @default(cuid())
   code      String   @unique
   name      String
+  // Open galleries accept uploads from anyone holding the link. Closed ones are
+  // view-only, so a finished set can be shared without inviting more photos.
+  // Defaults to open so existing galleries keep collecting as before.
+  isOpen    Boolean  @default(true)
   createdAt DateTime @default(now())
   ownerId   String
   owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)

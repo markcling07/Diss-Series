@@ -46,11 +46,20 @@ export async function POST(req: Request) {
     if (galleryCode) {
       const gallery = await prisma.gallery.findUnique({
         where: { code: normalizeCode(galleryCode) },
-        select: { id: true },
+        select: { id: true, isOpen: true },
       });
 
       if (!gallery) {
         return NextResponse.json({ error: 'Invalid gallery code' }, { status: 400 });
+      }
+
+      // Enforced here, not just by hiding the upload form — the endpoint is
+      // public, so a closed gallery has to refuse uploads on the server.
+      if (!gallery.isOpen) {
+        return NextResponse.json(
+          { error: 'This gallery is closed and is no longer accepting photos' },
+          { status: 403 }
+        );
       }
 
       galleryId = gallery.id;
