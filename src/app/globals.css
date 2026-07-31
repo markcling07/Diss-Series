@@ -1455,8 +1455,10 @@ a:focus-visible {
     padding: var(--sp-4);
   }
 
+  /* No top padding: the masthead rule directly above already separates the hero
+     from the navigation, so the extra space only pushed content down. */
   .hero {
-    padding: var(--sp-5) 0;
+    padding: 0 0 var(--sp-5);
   }
 
   /* Sized to hold the headline on a single line. Measured: the copy needs about
