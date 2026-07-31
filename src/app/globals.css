@@ -1425,21 +1425,53 @@ a:focus-visible {
 }
 
 @media (max-width: 640px) {
+  /* Logo and nav stay on one line, baseline-aligned with each other, rather
+     than stacking into a two-row masthead that eats the top of every screen. */
   .nav-content {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: var(--sp-3);
+  }
+
+  .logo {
+    font-size: var(--t-md);
+    flex-shrink: 0;
   }
 
   .nav-links {
-    width: 100%;
-    gap: var(--sp-3) var(--sp-4);
+    width: auto;
+    flex-wrap: nowrap;
+    gap: var(--sp-3);
   }
 
-  /* The masthead stacks here, so the avatar can end up near the left edge —
-     anchor the menu to its left or it opens off-screen. */
-  .nav-menu {
-    left: 0;
-    right: auto;
+  /* Tighter buttons so the signed-out pair still fits beside the logo. */
+  .nav-session .btn {
+    padding: 0.4rem 0.6rem;
+  }
+}
+
+/* Smallest phones still in use (iPhone SE at 320px). The signed-out masthead is
+   the widest case — logo plus two buttons — so it needs the extra squeeze. */
+@media (max-width: 380px) {
+  .nav-content {
+    gap: var(--sp-2);
+    padding-left: var(--sp-3);
+    padding-right: var(--sp-3);
+  }
+
+  .nav-links {
+    gap: var(--sp-2);
+  }
+
+  .nav-link,
+  .nav-session .btn {
+    font-size: var(--t-2xs);
+  }
+
+  .nav-session .btn {
+    padding: 0.35rem 0.5rem;
   }
 
   .panel {
