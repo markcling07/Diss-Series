@@ -212,9 +212,10 @@ export default function GalleryPage() {
   );
 
   // One entry point for deletion, rather than a control sitting on every frame.
-  // Owner-only, and hidden while selecting — the selection bar takes over then.
+  // Owner-only. No !selectMode guard needed: the row holding this is unmounted
+  // while selecting.
   const selectButton =
-    isOwner && photos.length > 0 && !selectMode ? (
+    isOwner && photos.length > 0 ? (
       <button
         type="button"
         className="btn btn-secondary"
@@ -260,10 +261,11 @@ export default function GalleryPage() {
     </button>
   ) : null;
 
-  // Hidden while selecting photos, so the two kinds of deletion — some frames
-  // versus the whole gallery — are never one misclick apart.
+  // Unreachable while selecting photos, since the row it lives in is unmounted
+  // then — so the two kinds of deletion, some frames versus the whole gallery,
+  // are never one misclick apart.
   const deleteGalleryButton =
-    isOwner && !selectMode ? (
+    isOwner ? (
       <button
         type="button"
         className="btn btn-secondary btn-icon"
@@ -296,10 +298,17 @@ export default function GalleryPage() {
         </div>
       </div>
 
-      {/* The share button and the owner's open/close control belong together on
+      {/* Selecting takes the whole row over rather than sitting beside the
+          upload form. Left alongside it, choosing files swaps this row for the
+          upload tray while the checkboxes stay on the grid below — two modes
+          running at once, and the tray doesn't carry the action buttons, so the
+          way out disappears too. The selection bar below is the only control
+          while selecting, and Cancel brings this row back.
+
+          The share button and the owner's open/close control belong together on
           one row. When the gallery is closed there is no upload form to hang
           them off, so they get their own row instead. */}
-      {gallery.isOpen ? (
+      {selectMode ? null : gallery.isOpen ? (
         <UploadForm
           galleryCode={gallery.code}
           onUploaded={fetchGallery}
