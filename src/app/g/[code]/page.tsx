@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
-import { Check, Copy, Loader2, Lock, LockOpen, Share2 } from 'lucide-react';
+import { Check, CheckSquare, Copy, Loader2, Lock, LockOpen, Share2, Trash2 } from 'lucide-react';
 import PhotoGrid, { PhotoItem } from '@/components/PhotoGrid';
 import UploadForm from '@/components/UploadForm';
 
@@ -27,6 +27,12 @@ export default function GalleryPage() {
   const [showShare, setShowShare] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteProgress, setDeleteProgress] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchGallery = useCallback(async () => {
     try {
@@ -70,6 +76,70 @@ export default function GalleryPage() {
     } finally {
       setToggling(false);
     }
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedIds([]);
+    setConfirmOpen(false);
+    setDeleteError(null);
+  };
+
+  const toggleSelected = (photo: PhotoItem) => {
+    setSelectedIds((prev) =>
+      prev.includes(photo.id) ? prev.filter((id) => id !== photo.id) : [...prev, photo.id]
+    );
+  };
+
+  const allSelected = photos.length > 0 && selectedIds.length === photos.length;
+
+  // Deleted one at a time against the existing per-photo endpoint. A gallery
+  // holds tens of photos, not thousands, and this keeps the server side to the
+  // single tested route — the same reasoning behind UploadForm's upload loop.
+  //
+  // Failures are collected rather than thrown, because a batch that dies
+  // halfway must still report what it did manage to remove.
+  const handleConfirmDelete = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+
+    const deleted: string[] = [];
+    const failures: string[] = [];
+
+    for (let i = 0; i < selectedIds.length; i++) {
+      const id = selectedIds[i];
+      setDeleteProgress(`Deleting ${i + 1} of ${selectedIds.length}…`);
+
+      try {
+        const res = await fetch(`/api/photos/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to delete photo');
+        }
+
+        deleted.push(id);
+      } catch (err: any) {
+        failures.push(err.message || 'Failed to delete photo');
+      }
+    }
+
+    // Dropped locally rather than refetching: the sheet is already correct once
+    // these frames are gone, and a refetch would flash the whole grid.
+    setPhotos((prev) => prev.filter((photo) => !deleted.includes(photo.id)));
+    setDeleting(false);
+    setDeleteProgress('');
+
+    if (failures.length > 0) {
+      // Whatever survived stays ticked, so a retry doesn't start from scratch.
+      setSelectedIds((prev) => prev.filter((id) => !deleted.includes(id)));
+      setDeleteError(
+        `${failures.length} of ${selectedIds.length} couldn't be deleted: ${failures[0]}`
+      );
+      return;
+    }
+
+    exitSelectMode();
   };
 
   useEffect(() => {
@@ -135,6 +205,21 @@ export default function GalleryPage() {
     </button>
   );
 
+  // One entry point for deletion, rather than a control sitting on every frame.
+  // Owner-only, and hidden while selecting — the selection bar takes over then.
+  const selectButton =
+    isOwner && photos.length > 0 && !selectMode ? (
+      <button
+        type="button"
+        className="btn btn-secondary"
+        onClick={() => setSelectMode(true)}
+        title="Pick photos to remove from this gallery"
+      >
+        <CheckSquare size={16} />
+        <span>Select photos</span>
+      </button>
+    ) : null;
+
   // Only the owner sees this. Everyone else just sees the result: an upload
   // form, or no upload form.
   const ownerToggle = isOwner ? (
@@ -176,12 +261,13 @@ export default function GalleryPage() {
         <UploadForm
           galleryCode={gallery.code}
           onUploaded={fetchGallery}
-          actions={<>{shareButton}{ownerToggle}</>}
+          actions={<>{shareButton}{ownerToggle}{selectButton}</>}
         />
       ) : (
         <div className="upload-bar">
           {shareButton}
           {ownerToggle}
+          {selectButton}
         </div>
       )}
 
@@ -228,11 +314,117 @@ export default function GalleryPage() {
 
       {/* Uploader badges are omitted here to keep the sheet to pure frames; who
           uploaded what is still shown in the lightbox. */}
+      {selectMode && (
+        <div className="select-bar">
+          <span className="state-mono">
+            {selectedIds.length === 0
+              ? 'Tap photos to select'
+              : `${selectedIds.length} selected`}
+          </span>
+
+          <div className="select-bar-actions">
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() =>
+                setSelectedIds(allSelected ? [] : photos.map((photo) => photo.id))
+              }
+            >
+              {allSelected ? 'Clear' : 'Select all'}
+            </button>
+
+            <button type="button" className="btn btn-secondary btn-sm" onClick={exitSelectMode}>
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => setConfirmOpen(true)}
+              disabled={selectedIds.length === 0}
+            >
+              <Trash2 size={13} />
+              <span>
+                Delete {selectedIds.length > 0 ? selectedIds.length : ''}
+                {selectedIds.length === 1 ? ' photo' : ' photos'}
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Only the owner gets to select. The endpoint also lets a signed-in
+          uploader remove their own photo, but this page has no idea who the
+          viewer is beyond isOwner, so it doesn't offer what it can't confirm. */}
       <PhotoGrid
         photos={photos}
         showUploaderInfo={false}
         emptyMessage="Nothing here yet — add the first photo above."
+        selectable={selectMode}
+        selectedIds={selectedIds}
+        onToggleSelect={toggleSelected}
       />
+
+      {confirmOpen && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            if (!deleting) {
+              setConfirmOpen(false);
+              setDeleteError(null);
+            }
+          }}
+        >
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <span className="eyebrow">Permanent</span>
+
+            <h3 className="modal-title">
+              Delete {selectedIds.length === 1 ? 'this photo' : `these ${selectedIds.length} photos`}?
+            </h3>
+
+            <p className="modal-text">
+              {selectedIds.length === 1 ? 'It' : 'They'} will be removed from{' '}
+              {gallery.name}. The {selectedIds.length === 1 ? 'file is' : 'files are'} deleted
+              from the server too, and whoever added {selectedIds.length === 1 ? 'it' : 'them'}{' '}
+              can&apos;t put {selectedIds.length === 1 ? 'it' : 'them'} back.
+            </p>
+
+            {deleteError && (
+              <div className="alert-error">
+                <span>{deleteError}</span>
+              </div>
+            )}
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn btn-primary btn-block"
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+              >
+                {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                <span>
+                  {deleting
+                    ? deleteProgress || 'Deleting…'
+                    : `Delete ${selectedIds.length} ${selectedIds.length === 1 ? 'photo' : 'photos'}`}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-secondary btn-block"
+                onClick={() => {
+                  setConfirmOpen(false);
+                  setDeleteError(null);
+                }}
+                disabled={deleting}
+              >
+                {deleteError ? 'Back to selection' : 'Keep them'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, User, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, User, X, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 
 export interface PhotoItem {
   id: string;
@@ -25,6 +25,13 @@ interface Props {
   photos: PhotoItem[];
   emptyMessage?: string;
   showUploaderInfo?: boolean;
+  // Turns the sheet into a picker: every frame gets a checkbox and clicking one
+  // ticks it rather than opening it. The grid only reports what was ticked —
+  // deciding who may select, and what happens to the selection, belongs to the
+  // page, which is the one that knows whether this viewer owns the gallery.
+  selectable?: boolean;
+  selectedIds?: string[];
+  onToggleSelect?: (photo: PhotoItem) => void;
 }
 
 // Frame numbers are padded so the column of labels stays the same width as a
@@ -35,8 +42,13 @@ export default function PhotoGrid({
   photos,
   emptyMessage = 'No photos yet',
   showUploaderInfo = true,
+  selectable = false,
+  selectedIds = [],
+  onToggleSelect,
 }: Props) {
-  // Tracked by index so the lightbox can step through `photos` in order.
+  // Tracked by index so the lightbox can step through `photos` in order. Not to
+  // be confused with `selectedIds` above — that is the delete selection, which
+  // is a different thing entirely and lives on the page.
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const selectedPhoto = selectedIndex === null ? null : photos[selectedIndex];
@@ -60,6 +72,12 @@ export default function PhotoGrid({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedIndex, photos.length]);
+
+  // A lightbox left open would hang over the picker, so entering selection
+  // mode closes it.
+  useEffect(() => {
+    if (selectable) setSelectedIndex(null);
+  }, [selectable]);
 
   // One sheet per day. Photos arrive newest-first, so sheets stay in that
   // order. The position in `photos` is carried along so a frame can open the
@@ -105,30 +123,59 @@ export default function PhotoGrid({
           </div>
 
           <div className="photo-grid">
-            {entries.map(({ photo, index }) => (
-              <div key={photo.id} className="photo-card">
+            {entries.map(({ photo, index }) => {
+              const isTicked = selectable && selectedIds.includes(photo.id);
+              const label = photo.caption || photo.originalName;
+
+              // One handler for both modes: while selecting, a frame ticks
+              // instead of opening, so there is never a click that does both.
+              const activate = () => {
+                if (selectable) {
+                  onToggleSelect?.(photo);
+                } else {
+                  setSelectedIndex(index);
+                }
+              };
+
+              return (
+              <div
+                key={photo.id}
+                className={`photo-card ${isTicked ? 'photo-card-selected' : ''}`}
+              >
                 <div
                   className="photo-img-wrapper"
-                  role="button"
+                  role={selectable ? 'checkbox' : 'button'}
+                  aria-checked={selectable ? isTicked : undefined}
                   tabIndex={0}
-                  aria-label={`View ${photo.caption || photo.originalName}`}
-                  onClick={() => setSelectedIndex(index)}
+                  aria-label={selectable ? `Select ${label}` : `View ${label}`}
+                  onClick={activate}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      setSelectedIndex(index);
+                      activate();
                     }
                   }}
                 >
                   <img
                     src={`/uploads/${photo.thumbFilename || photo.filename}`}
-                    alt={photo.caption || photo.originalName}
+                    alt={label}
                     className="photo-img"
                     loading="lazy"
                   />
                   <span className="frame-index" aria-hidden="true">
                     {frameLabel(index)}
                   </span>
+
+                  {/* Always visible while selecting — an empty box is what
+                      tells you the frame is tickable at all. */}
+                  {selectable && (
+                    <span
+                      className={`photo-select ${isTicked ? 'photo-select-on' : ''}`}
+                      aria-hidden="true"
+                    >
+                      {isTicked && <Check size={13} strokeWidth={3} />}
+                    </span>
+                  )}
                 </div>
 
                 {showUploaderInfo && (
@@ -143,7 +190,8 @@ export default function PhotoGrid({
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       ))}

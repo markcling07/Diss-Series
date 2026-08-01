@@ -850,6 +850,68 @@ a:focus-visible {
   opacity: 1;
 }
 
+/* The selection bar sits between the upload row and the sheet, and sticks to
+   the top on the way down — on a long sheet the count and the delete button
+   have to stay reachable without scrolling back up. */
+.select-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-5);
+  background: var(--paper-sunk);
+  border-left: 3px solid var(--safelight);
+}
+
+.select-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+/* Selection mode. The checkbox sits in the corner opposite the frame number and
+   is always visible while selecting — an empty box is the thing that tells you
+   a frame can be ticked at all, so it can't hide until hover the way the frame
+   number does. */
+.photo-select {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #fff;
+  border-radius: var(--radius-full);
+  background: rgba(23, 22, 27, 0.45);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.photo-select-on {
+  background: var(--safelight);
+  border-color: var(--safelight);
+}
+
+/* The tick alone is easy to miss across a full sheet, so a selected frame is
+   marked on the print itself too. */
+.photo-card-selected .photo-img-wrapper {
+  outline: 3px solid var(--safelight);
+  outline-offset: -1px;
+}
+
+.photo-card-selected .photo-img {
+  opacity: 0.82;
+}
+
 .photo-body {
   padding-top: var(--sp-2);
 }
