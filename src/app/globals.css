@@ -507,6 +507,14 @@ a {
   font-size: var(--t-xs);
 }
 
+/* Icon-only. Square rather than merely narrow, so it sits as a deliberate
+   glyph next to the worded buttons instead of a squashed one. The accessible
+   name comes from aria-label, since there is no text to read. */
+.btn-icon {
+  padding: 0.5625rem;
+  aspect-ratio: 1;
+}
+
 /* Buttons are disabled while a request is in flight, so they need to read as
    unavailable rather than merely faded. */
 .btn:disabled {
@@ -1401,6 +1409,15 @@ a:focus-visible {
   border: 1px solid var(--rule);
   padding: var(--sp-2);
   background: #fff;
+}
+
+/* In the popup the QR leads, so it is centred and given room rather than
+   sitting beside the code the way it did in the old inline panel. */
+.share-qr-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: var(--sp-5) 0;
 }
 
 .share-qr-label {

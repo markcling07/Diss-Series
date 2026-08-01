@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
-import { Check, CheckSquare, Copy, Loader2, Lock, LockOpen, Share2, Trash2 } from 'lucide-react';
+import { Check, CheckSquare, Copy, Loader2, Lock, LockOpen, QrCode, Trash2, X } from 'lucide-react';
 import PhotoGrid, { PhotoItem } from '@/components/PhotoGrid';
 import UploadForm from '@/components/UploadForm';
 
@@ -192,16 +192,19 @@ export default function GalleryPage() {
     );
   }
 
+  // Icon only — the QR code is the thing people recognise here, and the row it
+  // sits in is already carrying two worded buttons. The label lives in the
+  // tooltip and the accessible name.
   const shareButton = (
     <button
       type="button"
-      className="btn btn-secondary"
-      onClick={() => setShowShare((open) => !open)}
-      aria-expanded={showShare}
-      aria-controls="share-panel"
+      className="btn btn-secondary btn-icon"
+      onClick={() => setShowShare(true)}
+      aria-haspopup="dialog"
+      aria-label="Share this gallery"
+      title="Share this gallery"
     >
-      <Share2 size={16} />
-      <span>{showShare ? 'Hide share info' : 'Share'}</span>
+      <QrCode size={16} />
     </button>
   );
 
@@ -222,20 +225,35 @@ export default function GalleryPage() {
 
   // Only the owner sees this. Everyone else just sees the result: an upload
   // form, or no upload form.
+  //
+  // Icon only, like the share control beside it. The padlock carries the whole
+  // meaning, but it is doing double duty — it shows the current state and the
+  // action at once — so the tooltip and accessible name spell out what a click
+  // will do rather than what the gallery currently is.
   const ownerToggle = isOwner ? (
     <button
       type="button"
-      className="btn btn-secondary"
+      className="btn btn-secondary btn-icon"
       onClick={handleToggleOpen}
       disabled={toggling}
+      aria-label={
+        gallery.isOpen
+          ? 'Close gallery — stop accepting photos'
+          : 'Reopen gallery — accept photos again'
+      }
       title={
         gallery.isOpen
           ? 'Stop accepting photos — the link becomes view-only'
           : 'Accept photos again from anyone with the link'
       }
     >
-      {gallery.isOpen ? <Lock size={16} /> : <LockOpen size={16} />}
-      <span>{toggling ? 'Saving…' : gallery.isOpen ? 'Close gallery' : 'Reopen gallery'}</span>
+      {toggling ? (
+        <Loader2 size={16} className="animate-spin" />
+      ) : gallery.isOpen ? (
+        <Lock size={16} />
+      ) : (
+        <LockOpen size={16} />
+      )}
     </button>
   ) : null;
 
@@ -271,43 +289,65 @@ export default function GalleryPage() {
         </div>
       )}
 
-      {/* Collapsed by default: the code, link and QR are only needed when
-          inviting people, so they shouldn't push the photos down the page.
-          Rendered after the upload row so it expands directly below its button. */}
+      {/* A popup rather than an inline panel: inviting people is a moment, not a
+          state of the page, and the QR wants to be the biggest thing on screen
+          while someone is pointing a phone at it. */}
       {showShare && (
-        <div className="panel" id="share-panel">
-          <div className="share-grid">
-            <div className="share-main">
-              <label className="form-label">Gallery code</label>
-              <div className="gallery-code" style={{ marginBottom: '1.5rem' }}>
-                {gallery.code}
-              </div>
+        <div className="modal-overlay" onClick={() => setShowShare(false)}>
+          <div
+            className="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="share-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="modal-close"
+              onClick={() => setShowShare(false)}
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
 
-              <label className="form-label" htmlFor="share-url">
-                Share link
-              </label>
-              <input
-                id="share-url"
-                className="form-input"
-                type="text"
-                value={shareUrl}
-                readOnly
-                onFocus={(e) => e.currentTarget.select()}
-                style={{ marginBottom: '0.75rem' }}
-              />
+            <span className="eyebrow">Invite</span>
 
-              <button type="button" className="btn btn-secondary btn-sm" onClick={handleCopy}>
-                {copied ? <Check size={13} /> : <Copy size={13} />}
-                <span>{copied ? 'Copied' : 'Copy link'}</span>
-              </button>
-            </div>
+            <h3 className="modal-title" id="share-title">
+              {gallery.isOpen ? 'Anyone with this can add photos.' : 'Share the finished set.'}
+            </h3>
 
             {shareUrl && (
-              <div className="share-qr">
-                <QRCodeSVG value={shareUrl} size={148} fgColor="#17161b" bgColor="#ffffff" />
+              <div className="share-qr share-qr-modal">
+                <QRCodeSVG value={shareUrl} size={168} fgColor="#17161b" bgColor="#ffffff" />
                 <p className="share-qr-label">Scan to join</p>
               </div>
             )}
+
+            <label className="form-label">Gallery code</label>
+            <div className="gallery-code" style={{ marginBottom: '1.5rem' }}>
+              {gallery.code}
+            </div>
+
+            <label className="form-label" htmlFor="share-url">
+              Share link
+            </label>
+            <input
+              id="share-url"
+              className="form-input"
+              type="text"
+              value={shareUrl}
+              readOnly
+              onFocus={(e) => e.currentTarget.select()}
+              style={{ marginBottom: '0.75rem' }}
+            />
+
+            <button
+              type="button"
+              className="btn btn-secondary btn-block"
+              onClick={handleCopy}
+            >
+              {copied ? <Check size={13} /> : <Copy size={13} />}
+              <span>{copied ? 'Copied' : 'Copy link'}</span>
+            </button>
           </div>
         </div>
       )}
