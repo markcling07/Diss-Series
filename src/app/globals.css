@@ -1276,6 +1276,41 @@ a:focus-visible {
   font-size: var(--t-base);
 }
 
+/* Join by code. Separated from the upload row above it by a rule rather than a
+   panel — it is a second, quieter way in, not a competing call to action. */
+.join-form {
+  margin-top: var(--sp-6);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--rule);
+  max-width: 420px;
+}
+
+.join-row {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: stretch;
+}
+
+/* Codes are mono everywhere else they appear, and the wide tracking makes a
+   dictated code easier to check character by character. */
+.join-input {
+  font-family: var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  min-width: 0;
+}
+
+.join-input::placeholder {
+  letter-spacing: 0.08em;
+  text-transform: none;
+}
+
+.join-error {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--t-sm);
+  color: var(--safelight-deep);
+}
+
 /* ============================================================================
    Alerts & states
    ========================================================================= */
