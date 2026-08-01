@@ -312,9 +312,6 @@ export default function PhotoGrid({
                   </span>
                 )}
 
-                <span className="lightbox-counter">
-                  Frame {frameLabel(selectedIndex ?? 0)} / {frameLabel(photos.length - 1)}
-                </span>
               </div>
             </div>
           </div>

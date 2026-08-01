@@ -1208,10 +1208,6 @@ a:focus-visible {
   gap: 0.35rem;
 }
 
-.lightbox-counter {
-  margin-left: auto;
-  color: var(--ink);
-}
 
 /* ============================================================================
    Stats — hairline grid, no cards
