@@ -24,6 +24,8 @@ export interface PhotoItem {
 interface Props {
   photos: PhotoItem[];
   emptyMessage?: string;
+  // Governs the badge under each frame only. The lightbox always names the
+  // uploader — that is the view you open to learn about a single photo.
   showUploaderInfo?: boolean;
   // Turns the sheet into a picker: every frame gets a checkbox and clicking one
   // ticks it rather than opening it. The grid only reports what was ticked —
@@ -305,13 +307,14 @@ export default function PhotoGrid({
                   })}
                 </span>
 
-                {showUploaderInfo && (
-                  <span>
-                    <User size={12} />
-                    {selectedPhoto.user ? `@${selectedPhoto.user.username}` : 'Guest'}
-                  </span>
-                )}
-
+                {/* Always shown, unlike the badge on the card. Suppressing the
+                    badges keeps the sheet to pure frames; the lightbox is where
+                    you go to find out about one photo, so hiding who took it
+                    there would defeat the point. */}
+                <span>
+                  <User size={12} />
+                  {selectedPhoto.user ? `@${selectedPhoto.user.username}` : 'Guest'}
+                </span>
               </div>
             </div>
           </div>
