@@ -796,6 +796,46 @@ a:focus-visible {
   white-space: nowrap;
 }
 
+/* One block per uploader inside a day's sheet. The gap between blocks is what
+   does the separating — heavier than the gap between frames, lighter than the
+   space between sheets, so the hierarchy reads day > person > frame. */
+.uploader-block + .uploader-block {
+  margin-top: var(--sp-5);
+}
+
+.uploader-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+.uploader-name {
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  color: var(--muted);
+}
+
+/* Leads the row, with the name beside it. Same monogram treatment as the navbar
+   avatar, smaller and not interactive. */
+.uploader-avatar {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-full);
+  background: #fff;
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--ink);
+}
+
 .photo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr));

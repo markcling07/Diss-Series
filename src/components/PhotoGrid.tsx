@@ -32,7 +32,13 @@ interface Props {
   selectable?: boolean;
   selectedIds?: string[];
   onToggleSelect?: (photo: PhotoItem) => void;
+  // Blocks each day's frames by who added them, under a small header naming the
+  // uploader. Off by default — it only earns its space where photos genuinely
+  // come from several people.
+  groupByUploader?: boolean;
 }
+
+type Entry = { photo: PhotoItem; index: number };
 
 // Frame numbers are padded so the column of labels stays the same width as a
 // sheet fills up — the same reason a contact sheet prints 04 rather than 4.
@@ -45,6 +51,7 @@ export default function PhotoGrid({
   selectable = false,
   selectedIds = [],
   onToggleSelect,
+  groupByUploader = false,
 }: Props) {
   // Tracked by index so the lightbox can step through `photos` in order. Not to
   // be confused with `selectedIds` above — that is the delete selection, which
@@ -97,8 +104,96 @@ export default function PhotoGrid({
         groups.set(label, [entry]);
       }
       return groups;
-    }, new Map<string, { photo: PhotoItem; index: number }[]>())
+    }, new Map<string, Entry[]>())
   );
+
+  // Within a sheet, block the frames by who added them, in the order each
+  // uploader first appears. Guests all collapse into one block: there is no
+  // identity to tell them apart by, and a block per anonymous upload would be
+  // noise rather than structure.
+  const byUploader = (entries: Entry[]) => {
+    const groups = new Map<string, { key: string; username: string | null; entries: Entry[] }>();
+
+    for (const entry of entries) {
+      const username = entry.photo.user?.username ?? null;
+      // Prefixed so a member called "guest" can't collide with the guest block.
+      const key = username ? `user:${username}` : 'guest';
+      const existing = groups.get(key);
+
+      if (existing) {
+        existing.entries.push(entry);
+      } else {
+        groups.set(key, { key, username, entries: [entry] });
+      }
+    }
+
+    return Array.from(groups.values());
+  };
+
+  const renderCard = ({ photo, index }: Entry) => {
+    const isTicked = selectable && selectedIds.includes(photo.id);
+    const label = photo.caption || photo.originalName;
+
+    // One handler for both modes: while selecting, a frame ticks instead of
+    // opening, so there is never a click that does both.
+    const activate = () => {
+      if (selectable) {
+        onToggleSelect?.(photo);
+      } else {
+        setSelectedIndex(index);
+      }
+    };
+
+    return (
+      <div key={photo.id} className={`photo-card ${isTicked ? 'photo-card-selected' : ''}`}>
+        <div
+          className="photo-img-wrapper"
+          role={selectable ? 'checkbox' : 'button'}
+          aria-checked={selectable ? isTicked : undefined}
+          tabIndex={0}
+          aria-label={selectable ? `Select ${label}` : `View ${label}`}
+          onClick={activate}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              activate();
+            }
+          }}
+        >
+          <img
+            src={`/uploads/${photo.thumbFilename || photo.filename}`}
+            alt={label}
+            className="photo-img"
+            loading="lazy"
+          />
+          <span className="frame-index" aria-hidden="true">
+            {frameLabel(index)}
+          </span>
+
+          {/* Always visible while selecting — an empty box is what tells you
+              the frame is tickable at all. */}
+          {selectable && (
+            <span
+              className={`photo-select ${isTicked ? 'photo-select-on' : ''}`}
+              aria-hidden="true"
+            >
+              {isTicked && <Check size={13} strokeWidth={3} />}
+            </span>
+          )}
+        </div>
+
+        {showUploaderInfo && (
+          <div className="photo-body">
+            <div className="photo-meta">
+              <span className={`badge ${photo.user ? 'badge-user' : 'badge-guest'}`}>
+                {photo.user ? `@${photo.user.username}` : 'Guest'}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   if (photos.length === 0) {
     return (
@@ -122,77 +217,33 @@ export default function PhotoGrid({
             </span>
           </div>
 
-          <div className="photo-grid">
-            {entries.map(({ photo, index }) => {
-              const isTicked = selectable && selectedIds.includes(photo.id);
-              const label = photo.caption || photo.originalName;
-
-              // One handler for both modes: while selecting, a frame ticks
-              // instead of opening, so there is never a click that does both.
-              const activate = () => {
-                if (selectable) {
-                  onToggleSelect?.(photo);
-                } else {
-                  setSelectedIndex(index);
-                }
-              };
-
-              return (
-              <div
-                key={photo.id}
-                className={`photo-card ${isTicked ? 'photo-card-selected' : ''}`}
-              >
-                <div
-                  className="photo-img-wrapper"
-                  role={selectable ? 'checkbox' : 'button'}
-                  aria-checked={selectable ? isTicked : undefined}
-                  tabIndex={0}
-                  aria-label={selectable ? `Select ${label}` : `View ${label}`}
-                  onClick={activate}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      activate();
-                    }
-                  }}
-                >
-                  <img
-                    src={`/uploads/${photo.thumbFilename || photo.filename}`}
-                    alt={label}
-                    className="photo-img"
-                    loading="lazy"
-                  />
-                  <span className="frame-index" aria-hidden="true">
-                    {frameLabel(index)}
+          {groupByUploader ? (
+            byUploader(entries).map((group) => (
+              <div key={group.key} className="uploader-block">
+                <div className="uploader-head">
+                  {/* No profile photos exist yet, so this is a monogram of the
+                      username — the same stand-in the navbar uses, and the same
+                      place a real avatar goes once they do. Guests get the
+                      generic figure: there is no name to take a letter from. */}
+                  <span className="uploader-avatar" aria-hidden="true">
+                    {group.username ? (
+                      group.username.charAt(0).toUpperCase()
+                    ) : (
+                      <User size={13} />
+                    )}
                   </span>
 
-                  {/* Always visible while selecting — an empty box is what
-                      tells you the frame is tickable at all. */}
-                  {selectable && (
-                    <span
-                      className={`photo-select ${isTicked ? 'photo-select-on' : ''}`}
-                      aria-hidden="true"
-                    >
-                      {isTicked && <Check size={13} strokeWidth={3} />}
-                    </span>
-                  )}
+                  <span className="uploader-name">
+                    {group.username ? `@${group.username}` : 'Guest'}
+                  </span>
                 </div>
 
-                {showUploaderInfo && (
-                  <div className="photo-body">
-                    <div className="photo-meta">
-                      <span
-                        className={`badge ${photo.user ? 'badge-user' : 'badge-guest'}`}
-                      >
-                        {photo.user ? `@${photo.user.username}` : 'Guest'}
-                      </span>
-                    </div>
-                  </div>
-                )}
+                <div className="photo-grid">{group.entries.map(renderCard)}</div>
               </div>
-              );
-            })}
-          </div>
+            ))
+          ) : (
+            <div className="photo-grid">{entries.map(renderCard)}</div>
+          )}
         </section>
       ))}
 

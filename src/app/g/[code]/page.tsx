@@ -434,6 +434,7 @@ export default function GalleryPage() {
         photos={photos}
         showUploaderInfo={false}
         emptyMessage="Nothing here yet — add the first photo above."
+        groupByUploader
         selectable={selectMode}
         selectedIds={selectedIds}
         onToggleSelect={toggleSelected}
