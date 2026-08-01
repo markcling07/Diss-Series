@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, FolderPlus, Loader2 } from 'lucide-react';
+import { AlertCircle, FolderPlus, Loader2, Trash2 } from 'lucide-react';
 import PhotoGrid, { PhotoItem } from '@/components/PhotoGrid';
+import DeleteGalleryDialog, { DeletableGallery } from '@/components/DeleteGalleryDialog';
 
 interface Gallery {
   id: string;
@@ -21,6 +22,7 @@ export default function GalleriesPage() {
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<DeletableGallery | null>(null);
 
   useEffect(() => {
     fetchPageData();
@@ -182,12 +184,30 @@ export default function GalleriesPage() {
                     </td>
                     <td>{gallery._count.photos}</td>
                     <td>
-                      <Link
-                        href={`/g/${gallery.code}`}
-                        className="btn btn-secondary btn-sm"
-                      >
-                        Open
-                      </Link>
+                      <div className="table-actions">
+                        <Link
+                          href={`/g/${gallery.code}`}
+                          className="btn btn-secondary btn-sm"
+                        >
+                          Open
+                        </Link>
+
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm btn-icon"
+                          onClick={() =>
+                            setPendingDelete({
+                              code: gallery.code,
+                              name: gallery.name,
+                              photoCount: gallery._count.photos,
+                            })
+                          }
+                          aria-label={`Delete gallery ${gallery.name}`}
+                          title="Delete this gallery and its photos"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -206,6 +226,19 @@ export default function GalleriesPage() {
           emptyMessage="You haven't uploaded anything yet. Add a photo from the homepage, or open a gallery above."
         />
       </section>
+
+      <DeleteGalleryDialog
+        gallery={pendingDelete}
+        onCancel={() => setPendingDelete(null)}
+        onDeleted={(deleted) => {
+          setPendingDelete(null);
+          setGalleries((prev) => prev.filter((g) => g.code !== deleted.code));
+          // The sheet below lists this account's own uploads, which may have
+          // included photos from that gallery — so it has to be refetched
+          // rather than left showing photos that no longer exist.
+          if (deleted.photoCount > 0) fetchPageData();
+        }}
+      />
     </div>
   );
 }

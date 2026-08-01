@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { Check, CheckSquare, Copy, Loader2, Lock, LockOpen, QrCode, Trash2, X } from 'lucide-react';
 import PhotoGrid, { PhotoItem } from '@/components/PhotoGrid';
 import UploadForm from '@/components/UploadForm';
+import DeleteGalleryDialog, { DeletableGallery } from '@/components/DeleteGalleryDialog';
 
 interface Gallery {
   id: string;
@@ -18,6 +19,7 @@ interface Gallery {
 
 export default function GalleryPage() {
   const { code } = useParams<{ code: string }>();
+  const router = useRouter();
   const [gallery, setGallery] = useState<Gallery | null>(null);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,6 +35,7 @@ export default function GalleryPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteProgress, setDeleteProgress] = useState('');
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [pendingGalleryDelete, setPendingGalleryDelete] = useState<DeletableGallery | null>(null);
 
   const fetchGallery = useCallback(async () => {
     try {
@@ -257,6 +260,27 @@ export default function GalleryPage() {
     </button>
   ) : null;
 
+  // Hidden while selecting photos, so the two kinds of deletion — some frames
+  // versus the whole gallery — are never one misclick apart.
+  const deleteGalleryButton =
+    isOwner && !selectMode ? (
+      <button
+        type="button"
+        className="btn btn-secondary btn-icon"
+        onClick={() =>
+          setPendingGalleryDelete({
+            code: gallery.code,
+            name: gallery.name,
+            photoCount: photos.length,
+          })
+        }
+        aria-label="Delete this gallery"
+        title="Delete this gallery and its photos"
+      >
+        <Trash2 size={16} />
+      </button>
+    ) : null;
+
   return (
     <div>
       <div className="page-header">
@@ -279,12 +303,13 @@ export default function GalleryPage() {
         <UploadForm
           galleryCode={gallery.code}
           onUploaded={fetchGallery}
-          actions={<>{shareButton}{ownerToggle}{selectButton}</>}
+          actions={<>{shareButton}{ownerToggle}{deleteGalleryButton}{selectButton}</>}
         />
       ) : (
         <div className="upload-bar">
           {shareButton}
           {ownerToggle}
+          {deleteGalleryButton}
           {selectButton}
         </div>
       )}
@@ -403,6 +428,14 @@ export default function GalleryPage() {
         selectable={selectMode}
         selectedIds={selectedIds}
         onToggleSelect={toggleSelected}
+      />
+
+      {/* The gallery this page is showing has just stopped existing, so there
+          is nothing to return to — off to the list instead. */}
+      <DeleteGalleryDialog
+        gallery={pendingGalleryDelete}
+        onCancel={() => setPendingGalleryDelete(null)}
+        onDeleted={() => router.push('/galleries')}
       />
 
       {confirmOpen && (

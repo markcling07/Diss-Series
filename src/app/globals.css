@@ -1274,6 +1274,14 @@ a:focus-visible {
   font-size: var(--t-base);
 }
 
+/* Row actions sit on one line, so a table cell holding two controls doesn't
+   stack them and stretch the row. */
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
 /* Join by code. Separated from the upload row above it by a rule rather than a
    panel — it is a second, quieter way in, not a competing call to action. */
 .join-form {

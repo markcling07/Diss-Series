@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import { normalizeCode } from '@/lib/gallery';
+import { removeUploadFiles } from '@/lib/uploads';
 
 // Public on purpose: knowing the code IS the authorization for this gallery.
 // Returns no owner id and no email addresses, since anyone may reach this — the
@@ -76,5 +77,60 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ code: 
   } catch (error) {
     console.error('Update gallery error:', error);
     return NextResponse.json({ error: 'Failed to update gallery' }, { status: 500 });
+  }
+}
+
+// Owner-only, and it takes the photos with it.
+//
+// The schema's onDelete: SetNull would otherwise leave every photo behind with
+// a null galleryId — alive in the database and on disk, but unreachable by the
+// person who just deleted the only thing pointing at them. Removing them
+// explicitly is what "delete this gallery" is understood to mean.
+export async function DELETE(req: Request, { params }: { params: Promise<{ code: string }> }) {
+  try {
+    const { code } = await params;
+    const authUser = await getAuthUser();
+
+    if (!authUser) {
+      return NextResponse.json({ error: 'You must be signed in' }, { status: 401 });
+    }
+
+    const gallery = await prisma.gallery.findUnique({
+      where: { code: normalizeCode(code) },
+      select: {
+        id: true,
+        ownerId: true,
+        photos: { select: { filename: true, thumbFilename: true } },
+      },
+    });
+
+    if (!gallery) {
+      return NextResponse.json({ error: 'Gallery not found' }, { status: 404 });
+    }
+
+    if (gallery.ownerId !== authUser.id) {
+      return NextResponse.json(
+        { error: 'Only the gallery owner can delete it' },
+        { status: 403 }
+      );
+    }
+
+    // One transaction, photos first: a half-deleted gallery — rows gone but the
+    // gallery still listed, or the reverse — is worse than no deletion at all.
+    await prisma.$transaction([
+      prisma.photo.deleteMany({ where: { galleryId: gallery.id } }),
+      prisma.gallery.delete({ where: { id: gallery.id } }),
+    ]);
+
+    // Only once the rows are committed, for the same reason as photo deletion:
+    // orphaned files are invisible, rows pointing at missing files are not.
+    await removeUploadFiles(
+      gallery.photos.flatMap((photo) => [photo.filename, photo.thumbFilename])
+    );
+
+    return NextResponse.json({ success: true, deletedPhotos: gallery.photos.length });
+  } catch (error) {
+    console.error('Delete gallery error:', error);
+    return NextResponse.json({ error: 'Failed to delete gallery' }, { status: 500 });
   }
 }
