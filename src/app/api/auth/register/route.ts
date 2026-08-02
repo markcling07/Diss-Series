@@ -1,10 +1,26 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { hashPassword, signToken } from '@/lib/auth';
+import { authCookieOptions, hashPassword, signToken } from '@/lib/auth';
+import { checkRateLimit, clientKey, tooManyRequests } from '@/lib/rate-limit';
+import { badRequestResponse, readJsonBody } from '@/lib/http';
+
+// Tighter than login: there is no legitimate reason for one address to create
+// accounts in a burst, and every account is a row plus a bcrypt hash.
+const MAX_SIGNUPS = 5;
+const WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(req: Request) {
   try {
-    const { username, email, password } = await req.json();
+    const limit = checkRateLimit(clientKey(req, 'register'), MAX_SIGNUPS, WINDOW_MS);
+    if (!limit.ok) {
+      return tooManyRequests(limit.retryAfterSeconds);
+    }
+
+    const { username, email, password } = await readJsonBody<{
+      username?: string;
+      email?: string;
+      password?: string;
+    }>(req);
 
     if (!username || !email || !password) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -51,17 +67,13 @@ export async function POST(req: Request) {
       },
     });
 
-    response.cookies.set({
-      name: 'auth_token',
-      value: token,
-      httpOnly: true,
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
+    response.cookies.set({ ...authCookieOptions, value: token });
 
     return response;
   } catch (error) {
+    const badRequest = badRequestResponse(error);
+    if (badRequest) return badRequest;
+
     console.error('Registration error:', error);
     return NextResponse.json({ error: 'Registration failed. Please try again.' }, { status: 500 });
   }

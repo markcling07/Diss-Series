@@ -3,6 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, User, X, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 
+// Uploads are not static assets — they are streamed by a route handler that
+// pins the content type. Stored names may contain a `thumbs/` segment, so each
+// segment is encoded separately to keep the slash meaningful as a path
+// separator rather than escaping it.
+function photoUrl(storedName: string): string {
+  return `/api/files/${storedName.split('/').map(encodeURIComponent).join('/')}`;
+}
+
 export interface PhotoItem {
   id: string;
   filename: string;
@@ -163,7 +171,7 @@ export default function PhotoGrid({
           }}
         >
           <img
-            src={`/uploads/${photo.thumbFilename || photo.filename}`}
+            src={photoUrl(photo.thumbFilename || photo.filename)}
             alt={label}
             className="photo-img"
             loading="lazy"
@@ -262,7 +270,7 @@ export default function PhotoGrid({
 
             <div className="lightbox-stage">
               <img
-                src={`/uploads/${selectedPhoto.filename}`}
+                src={photoUrl(selectedPhoto.filename)}
                 alt={selectedPhoto.caption || selectedPhoto.originalName}
                 className="lightbox-img"
               />

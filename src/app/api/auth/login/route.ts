@@ -1,10 +1,25 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { comparePassword, signToken } from '@/lib/auth';
+import { authCookieOptions, comparePassword, signToken } from '@/lib/auth';
+import { checkRateLimit, clientKey, tooManyRequests } from '@/lib/rate-limit';
+import { badRequestResponse, readJsonBody } from '@/lib/http';
+
+// Ten attempts per five minutes. Generous enough that nobody fat-fingering a
+// password ever meets it, tight enough that guessing is pointless.
+const MAX_ATTEMPTS = 10;
+const WINDOW_MS = 5 * 60 * 1000;
 
 export async function POST(req: Request) {
   try {
-    const { loginId, password } = await req.json();
+    const limit = checkRateLimit(clientKey(req, 'login'), MAX_ATTEMPTS, WINDOW_MS);
+    if (!limit.ok) {
+      return tooManyRequests(limit.retryAfterSeconds);
+    }
+
+    const { loginId, password } = await readJsonBody<{
+      loginId?: string;
+      password?: string;
+    }>(req);
 
     if (!loginId || !password) {
       return NextResponse.json({ error: 'Please provide email/username and password' }, { status: 400 });
@@ -44,17 +59,13 @@ export async function POST(req: Request) {
       },
     });
 
-    response.cookies.set({
-      name: 'auth_token',
-      value: token,
-      httpOnly: true,
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 7,
-    });
+    response.cookies.set({ ...authCookieOptions, value: token });
 
     return response;
   } catch (error) {
+    const badRequest = badRequestResponse(error);
+    if (badRequest) return badRequest;
+
     console.error('Login error:', error);
     return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }

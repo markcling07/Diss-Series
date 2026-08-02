@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import { normalizeCode } from '@/lib/gallery';
 import { removeUploadFiles } from '@/lib/uploads';
+import { badRequestResponse, readJsonBody } from '@/lib/http';
 
 // Public on purpose: knowing the code IS the authorization for this gallery.
 // Returns no owner id and no email addresses, since anyone may reach this — the
@@ -61,7 +62,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ code: 
       );
     }
 
-    const body = await req.json();
+    const body = await readJsonBody<{ isOpen?: unknown }>(req);
 
     if (typeof body.isOpen !== 'boolean') {
       return NextResponse.json({ error: 'isOpen must be true or false' }, { status: 400 });
@@ -75,6 +76,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ code: 
 
     return NextResponse.json({ success: true, gallery: updated });
   } catch (error) {
+    const badRequest = badRequestResponse(error);
+    if (badRequest) return badRequest;
+
     console.error('Update gallery error:', error);
     return NextResponse.json({ error: 'Failed to update gallery' }, { status: 500 });
   }

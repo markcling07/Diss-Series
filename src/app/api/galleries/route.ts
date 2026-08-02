@@ -2,8 +2,13 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import { generateGalleryCode } from '@/lib/gallery';
+import { badRequestResponse, readJsonBody } from '@/lib/http';
 
 const MAX_NAME_LENGTH = 80;
+
+// One account cannot mint share codes indefinitely. Each gallery is a public
+// upload endpoint, so this bounds how much surface a single signup can create.
+const MAX_GALLERIES_PER_USER = 50;
 
 export async function POST(req: Request) {
   try {
@@ -13,7 +18,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'You must be signed in to create a gallery' }, { status: 401 });
     }
 
-    const body = await req.json();
+    const owned = await prisma.gallery.count({ where: { ownerId: authUser.id } });
+    if (owned >= MAX_GALLERIES_PER_USER) {
+      return NextResponse.json(
+        { error: `You have reached the limit of ${MAX_GALLERIES_PER_USER} galleries. Delete one to create another.` },
+        { status: 403 }
+      );
+    }
+
+    const body = await readJsonBody<{ name?: unknown }>(req);
     const name = typeof body.name === 'string' ? body.name.trim() : '';
 
     if (!name) {
@@ -44,6 +57,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ error: 'Could not allocate a unique gallery code' }, { status: 500 });
   } catch (error) {
+    const badRequest = badRequestResponse(error);
+    if (badRequest) return badRequest;
+
     console.error('Create gallery error:', error);
     return NextResponse.json({ error: 'Failed to create gallery' }, { status: 500 });
   }
