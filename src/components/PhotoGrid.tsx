@@ -27,6 +27,10 @@ export interface PhotoItem {
     // Optional: public gallery responses deliberately omit email.
     email?: string;
   } | null;
+  // Decided by the server: whether this viewer may remove this photo. Absent on
+  // responses that never offer deletion, which is why selection treats only an
+  // explicit `true` as permission.
+  canDelete?: boolean;
 }
 
 interface Props {
@@ -141,13 +145,18 @@ export default function PhotoGrid({
   };
 
   const renderCard = ({ photo, index }: Entry) => {
-    const isTicked = selectable && selectedIds.includes(photo.id);
+    // Selection is per-frame, not per-sheet: a contributor picking their own
+    // photos out of a shared gallery sees checkboxes only on theirs. Everyone
+    // else's frames stay ordinary and still open in the lightbox, so the sheet
+    // reads the same either way.
+    const isPickable = selectable && photo.canDelete === true;
+    const isTicked = isPickable && selectedIds.includes(photo.id);
     const label = photo.caption || photo.originalName;
 
-    // One handler for both modes: while selecting, a frame ticks instead of
-    // opening, so there is never a click that does both.
+    // One handler for both modes: while selecting, a tickable frame ticks
+    // instead of opening, so there is never a click that does both.
     const activate = () => {
-      if (selectable) {
+      if (isPickable) {
         onToggleSelect?.(photo);
       } else {
         setSelectedIndex(index);
@@ -158,10 +167,10 @@ export default function PhotoGrid({
       <div key={photo.id} className={`photo-card ${isTicked ? 'photo-card-selected' : ''}`}>
         <div
           className="photo-img-wrapper"
-          role={selectable ? 'checkbox' : 'button'}
-          aria-checked={selectable ? isTicked : undefined}
+          role={isPickable ? 'checkbox' : 'button'}
+          aria-checked={isPickable ? isTicked : undefined}
           tabIndex={0}
-          aria-label={selectable ? `Select ${label}` : `View ${label}`}
+          aria-label={isPickable ? `Select ${label}` : `View ${label}`}
           onClick={activate}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -181,8 +190,9 @@ export default function PhotoGrid({
           </span>
 
           {/* Always visible while selecting — an empty box is what tells you
-              the frame is tickable at all. */}
-          {selectable && (
+              the frame is tickable at all, and its absence is what tells you
+              someone else's frame is not yours to remove. */}
+          {isPickable && (
             <span
               className={`photo-select ${isTicked ? 'photo-select-on' : ''}`}
               aria-hidden="true"

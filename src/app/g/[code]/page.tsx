@@ -94,7 +94,12 @@ export default function GalleryPage() {
     );
   };
 
-  const allSelected = photos.length > 0 && selectedIds.length === photos.length;
+  // The server decides this per photo: everything for an owner or admin, only
+  // their own frames for a signed-in contributor, nothing for a guest. The page
+  // just reads the flag — it never works out who may delete what.
+  const deletablePhotos = photos.filter((photo) => photo.canDelete);
+  const allSelected =
+    deletablePhotos.length > 0 && selectedIds.length === deletablePhotos.length;
 
   // Deleted one at a time against the existing per-photo endpoint. A gallery
   // holds tens of photos, not thousands, and this keeps the server side to the
@@ -212,18 +217,25 @@ export default function GalleryPage() {
   );
 
   // One entry point for deletion, rather than a control sitting on every frame.
-  // Owner-only. No !selectMode guard needed: the row holding this is unmounted
-  // while selecting.
+  // Shown to anyone with something to delete — the owner, or a signed-in
+  // contributor who added photos here. The wording distinguishes the two, so a
+  // contributor is not led to expect they can clear the whole sheet.
+  // No !selectMode guard needed: the row holding this is unmounted while
+  // selecting.
   const selectButton =
-    isOwner && photos.length > 0 ? (
+    deletablePhotos.length > 0 ? (
       <button
         type="button"
         className="btn btn-secondary"
         onClick={() => setSelectMode(true)}
-        title="Pick photos to remove from this gallery"
+        title={
+          isOwner
+            ? 'Pick photos to remove from this gallery'
+            : 'Pick your own photos to remove from this gallery'
+        }
       >
         <CheckSquare size={16} />
-        <span>Select photos</span>
+        <span>{isOwner ? 'Select photos' : 'Select my photos'}</span>
       </button>
     ) : null;
 
@@ -392,7 +404,9 @@ export default function GalleryPage() {
         <div className="select-bar">
           <span className="state-mono">
             {selectedIds.length === 0
-              ? 'Tap photos to select'
+              ? isOwner
+                ? 'Tap photos to select'
+                : 'Tap your photos to select'
               : `${selectedIds.length} selected`}
           </span>
 
@@ -401,7 +415,9 @@ export default function GalleryPage() {
               type="button"
               className="btn btn-secondary btn-sm"
               onClick={() =>
-                setSelectedIds(allSelected ? [] : photos.map((photo) => photo.id))
+                setSelectedIds(
+                  allSelected ? [] : deletablePhotos.map((photo) => photo.id)
+                )
               }
             >
               {allSelected ? 'Clear' : 'Select all'}

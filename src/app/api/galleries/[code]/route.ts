@@ -22,16 +22,39 @@ export async function GET(req: Request, { params }: { params: Promise<{ code: st
 
   const authUser = await getAuthUser();
   const isOwner = !!authUser && authUser.id === gallery.ownerId;
+  const isAdmin = authUser?.role === 'ADMIN' || authUser?.role === 'SUPER_ADMIN';
 
   const photos = await prisma.photo.findMany({
     where: { galleryId: gallery.id },
     orderBy: { createdAt: 'desc' },
-    include: { user: { select: { username: true } } },
+    // Fields listed rather than spread: a bare include returns every scalar,
+    // which would hand each uploader's userId to anyone holding the code.
+    select: {
+      id: true,
+      filename: true,
+      thumbFilename: true,
+      originalName: true,
+      caption: true,
+      mimeType: true,
+      size: true,
+      createdAt: true,
+      userId: true, // consumed below to derive canDelete, then dropped
+      user: { select: { username: true } },
+    },
   });
+
+  // Who may remove each photo, decided here and sent as a boolean. The client is
+  // never told *why* — only whether to offer the control. DELETE /api/photos/[id]
+  // re-checks the same three conditions, so this flag only governs what the page
+  // displays; flipping it in a response buys nothing.
+  const visiblePhotos = photos.map(({ userId, ...photo }) => ({
+    ...photo,
+    canDelete: isOwner || isAdmin || (!!authUser && !!userId && userId === authUser.id),
+  }));
 
   const { ownerId, ...publicGallery } = gallery;
 
-  return NextResponse.json({ gallery: publicGallery, isOwner, photos });
+  return NextResponse.json({ gallery: publicGallery, isOwner, photos: visiblePhotos });
 }
 
 // Owner-only: open or close the gallery to further uploads.
