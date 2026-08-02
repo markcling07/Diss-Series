@@ -42,16 +42,22 @@ Everything that must survive a deploy lives here. Nothing else does.
 
 ## 3. Confirm the build settings
 
-Railway's Nixpacks should detect Node and need no changes. Verify under
-**Settings → Build/Deploy**:
+Railway's Nixpacks should detect Node, but the pre-deploy command must be set by
+hand. Under **Settings → Build/Deploy**:
 
 - Build command: `npm run build` (runs `prisma generate` then `next build`)
-- Start command: `npm start` (runs `prisma migrate deploy` then `next start`)
+- **Pre-Deploy Command: `npm run migrate`**
+- Start command: `npm start` (just `next start`)
 
-`prisma migrate deploy` on every start is intentional: it creates the schema on
-the volume the first time the app boots, and is a no-op on every boot after. It
-is safe precisely because this is a single instance — two instances starting at
-once would race.
+Migrations belong in the pre-deploy step, not the start command. Chaining them
+onto startup delays the server binding a port, and on a cold deploy the
+migration can take longer than the healthcheck window — so Railway kills the
+container as unhealthy, and a manual restart then "fixes" it because the
+migration is already applied and returns instantly. That produces exactly the
+symptom of a deploy that crashes intermittently and succeeds on retry.
+
+Pre-deploy runs with the volume mounted and the environment present, and a
+failed migration blocks promotion of the bad deploy instead of crash-looping it.
 
 ## 4. Set the environment variables
 
@@ -80,10 +86,10 @@ Redeploy. Then **Settings → Networking → Generate Domain** for a
 Check the deploy logs for:
 
 ```
-✔ Generated Prisma Client
-✓ Compiled successfully
-Applying migration ...          ← first boot only
-✓ Ready in ...
+✔ Generated Prisma Client        ← build
+✓ Compiled successfully          ← build
+Applying migration ...           ← pre-deploy, first deploy only
+✓ Ready in ...                   ← start
 ```
 
 ## 6. Create your admin account

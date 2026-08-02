@@ -60,8 +60,8 @@ Assumes a mounted volume at `/data` and nginx in front.
 
 ```bash
 npm ci
-npx prisma migrate deploy
 npm run build
+npm run migrate    # before starting, not chained onto it — see DEPLOY.md
 npm start
 ```
 
