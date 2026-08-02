@@ -46,5 +46,11 @@ prisma/dev.db-journal
 prisma/*.db
 
 # uploaded files (runtime data)
-/public/uploads/*
-!/public/uploads/.gitkeep
+# Served by src/app/api/files, never as static assets. In production this lives
+# on a mounted volume via UPLOADS_DIR; locally it defaults to ./var/uploads.
+/var
+
+# Legacy upload location, kept ignored so leftovers can't be committed by
+# accident. Everything here was copied to var/uploads — safe to delete once
+# you've confirmed the galleries still render.
+/public/uploads

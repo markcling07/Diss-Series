@@ -1,7 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, User, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, User, X, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+
+// Uploads are not static assets — they are streamed by a route handler that
+// pins the content type. Stored names may contain a `thumbs/` segment, so each
+// segment is encoded separately to keep the slash meaningful as a path
+// separator rather than escaping it.
+function photoUrl(storedName: string): string {
+  return `/api/files/${storedName.split('/').map(encodeURIComponent).join('/')}`;
+}
 
 export interface PhotoItem {
   id: string;
@@ -24,8 +32,23 @@ export interface PhotoItem {
 interface Props {
   photos: PhotoItem[];
   emptyMessage?: string;
+  // Governs the badge under each frame only. The lightbox always names the
+  // uploader — that is the view you open to learn about a single photo.
   showUploaderInfo?: boolean;
+  // Turns the sheet into a picker: every frame gets a checkbox and clicking one
+  // ticks it rather than opening it. The grid only reports what was ticked —
+  // deciding who may select, and what happens to the selection, belongs to the
+  // page, which is the one that knows whether this viewer owns the gallery.
+  selectable?: boolean;
+  selectedIds?: string[];
+  onToggleSelect?: (photo: PhotoItem) => void;
+  // Blocks each day's frames by who added them, under a small header naming the
+  // uploader. Off by default — it only earns its space where photos genuinely
+  // come from several people.
+  groupByUploader?: boolean;
 }
+
+type Entry = { photo: PhotoItem; index: number };
 
 // Frame numbers are padded so the column of labels stays the same width as a
 // sheet fills up — the same reason a contact sheet prints 04 rather than 4.
@@ -35,8 +58,14 @@ export default function PhotoGrid({
   photos,
   emptyMessage = 'No photos yet',
   showUploaderInfo = true,
+  selectable = false,
+  selectedIds = [],
+  onToggleSelect,
+  groupByUploader = false,
 }: Props) {
-  // Tracked by index so the lightbox can step through `photos` in order.
+  // Tracked by index so the lightbox can step through `photos` in order. Not to
+  // be confused with `selectedIds` above — that is the delete selection, which
+  // is a different thing entirely and lives on the page.
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const selectedPhoto = selectedIndex === null ? null : photos[selectedIndex];
@@ -61,6 +90,12 @@ export default function PhotoGrid({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedIndex, photos.length]);
 
+  // A lightbox left open would hang over the picker, so entering selection
+  // mode closes it.
+  useEffect(() => {
+    if (selectable) setSelectedIndex(null);
+  }, [selectable]);
+
   // One sheet per day. Photos arrive newest-first, so sheets stay in that
   // order. The position in `photos` is carried along so a frame can open the
   // lightbox at the right place without searching the array again.
@@ -79,8 +114,96 @@ export default function PhotoGrid({
         groups.set(label, [entry]);
       }
       return groups;
-    }, new Map<string, { photo: PhotoItem; index: number }[]>())
+    }, new Map<string, Entry[]>())
   );
+
+  // Within a sheet, block the frames by who added them, in the order each
+  // uploader first appears. Guests all collapse into one block: there is no
+  // identity to tell them apart by, and a block per anonymous upload would be
+  // noise rather than structure.
+  const byUploader = (entries: Entry[]) => {
+    const groups = new Map<string, { key: string; username: string | null; entries: Entry[] }>();
+
+    for (const entry of entries) {
+      const username = entry.photo.user?.username ?? null;
+      // Prefixed so a member called "guest" can't collide with the guest block.
+      const key = username ? `user:${username}` : 'guest';
+      const existing = groups.get(key);
+
+      if (existing) {
+        existing.entries.push(entry);
+      } else {
+        groups.set(key, { key, username, entries: [entry] });
+      }
+    }
+
+    return Array.from(groups.values());
+  };
+
+  const renderCard = ({ photo, index }: Entry) => {
+    const isTicked = selectable && selectedIds.includes(photo.id);
+    const label = photo.caption || photo.originalName;
+
+    // One handler for both modes: while selecting, a frame ticks instead of
+    // opening, so there is never a click that does both.
+    const activate = () => {
+      if (selectable) {
+        onToggleSelect?.(photo);
+      } else {
+        setSelectedIndex(index);
+      }
+    };
+
+    return (
+      <div key={photo.id} className={`photo-card ${isTicked ? 'photo-card-selected' : ''}`}>
+        <div
+          className="photo-img-wrapper"
+          role={selectable ? 'checkbox' : 'button'}
+          aria-checked={selectable ? isTicked : undefined}
+          tabIndex={0}
+          aria-label={selectable ? `Select ${label}` : `View ${label}`}
+          onClick={activate}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              activate();
+            }
+          }}
+        >
+          <img
+            src={photoUrl(photo.thumbFilename || photo.filename)}
+            alt={label}
+            className="photo-img"
+            loading="lazy"
+          />
+          <span className="frame-index" aria-hidden="true">
+            {frameLabel(index)}
+          </span>
+
+          {/* Always visible while selecting — an empty box is what tells you
+              the frame is tickable at all. */}
+          {selectable && (
+            <span
+              className={`photo-select ${isTicked ? 'photo-select-on' : ''}`}
+              aria-hidden="true"
+            >
+              {isTicked && <Check size={13} strokeWidth={3} />}
+            </span>
+          )}
+        </div>
+
+        {showUploaderInfo && (
+          <div className="photo-body">
+            <div className="photo-meta">
+              <span className={`badge ${photo.user ? 'badge-user' : 'badge-guest'}`}>
+                {photo.user ? `@${photo.user.username}` : 'Guest'}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   if (photos.length === 0) {
     return (
@@ -104,47 +227,33 @@ export default function PhotoGrid({
             </span>
           </div>
 
-          <div className="photo-grid">
-            {entries.map(({ photo, index }) => (
-              <div key={photo.id} className="photo-card">
-                <div
-                  className="photo-img-wrapper"
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`View ${photo.caption || photo.originalName}`}
-                  onClick={() => setSelectedIndex(index)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setSelectedIndex(index);
-                    }
-                  }}
-                >
-                  <img
-                    src={`/uploads/${photo.thumbFilename || photo.filename}`}
-                    alt={photo.caption || photo.originalName}
-                    className="photo-img"
-                    loading="lazy"
-                  />
-                  <span className="frame-index" aria-hidden="true">
-                    {frameLabel(index)}
+          {groupByUploader ? (
+            byUploader(entries).map((group) => (
+              <div key={group.key} className="uploader-block">
+                <div className="uploader-head">
+                  {/* No profile photos exist yet, so this is a monogram of the
+                      username — the same stand-in the navbar uses, and the same
+                      place a real avatar goes once they do. Guests get the
+                      generic figure: there is no name to take a letter from. */}
+                  <span className="uploader-avatar" aria-hidden="true">
+                    {group.username ? (
+                      group.username.charAt(0).toUpperCase()
+                    ) : (
+                      <User size={13} />
+                    )}
+                  </span>
+
+                  <span className="uploader-name">
+                    {group.username ? `@${group.username}` : 'Guest'}
                   </span>
                 </div>
 
-                {showUploaderInfo && (
-                  <div className="photo-body">
-                    <div className="photo-meta">
-                      <span
-                        className={`badge ${photo.user ? 'badge-user' : 'badge-guest'}`}
-                      >
-                        {photo.user ? `@${photo.user.username}` : 'Guest'}
-                      </span>
-                    </div>
-                  </div>
-                )}
+                <div className="photo-grid">{group.entries.map(renderCard)}</div>
               </div>
-            ))}
-          </div>
+            ))
+          ) : (
+            <div className="photo-grid">{entries.map(renderCard)}</div>
+          )}
         </section>
       ))}
 
@@ -161,7 +270,7 @@ export default function PhotoGrid({
 
             <div className="lightbox-stage">
               <img
-                src={`/uploads/${selectedPhoto.filename}`}
+                src={photoUrl(selectedPhoto.filename)}
                 alt={selectedPhoto.caption || selectedPhoto.originalName}
                 className="lightbox-img"
               />
@@ -206,15 +315,13 @@ export default function PhotoGrid({
                   })}
                 </span>
 
-                {showUploaderInfo && (
-                  <span>
-                    <User size={12} />
-                    {selectedPhoto.user ? `@${selectedPhoto.user.username}` : 'Guest'}
-                  </span>
-                )}
-
-                <span className="lightbox-counter">
-                  Frame {frameLabel(selectedIndex ?? 0)} / {frameLabel(photos.length - 1)}
+                {/* Always shown, unlike the badge on the card. Suppressing the
+                    badges keeps the sheet to pure frames; the lightbox is where
+                    you go to find out about one photo, so hiding who took it
+                    there would defeat the point. */}
+                <span>
+                  <User size={12} />
+                  {selectedPhoto.user ? `@${selectedPhoto.user.username}` : 'Guest'}
                 </span>
               </div>
             </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
+import { badRequestResponse, readJsonBody } from '@/lib/http';
 
 export async function PATCH(
   req: Request,
@@ -14,10 +15,10 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const { role } = await req.json();
+    const { role } = await readJsonBody<{ role?: string }>(req);
 
     const allowedRoles = ['USER', 'ADMIN', 'SUPER_ADMIN'];
-    if (!allowedRoles.includes(role)) {
+    if (typeof role !== 'string' || !allowedRoles.includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
 
@@ -39,6 +40,9 @@ export async function PATCH(
 
     return NextResponse.json({ success: true, user: updatedUser });
   } catch (error) {
+    const badRequest = badRequestResponse(error);
+    if (badRequest) return badRequest;
+
     console.error('Update role error:', error);
     return NextResponse.json({ error: 'Failed to update user role' }, { status: 500 });
   }

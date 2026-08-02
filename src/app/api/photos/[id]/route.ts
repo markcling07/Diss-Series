@@ -1,0 +1,56 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
+import { getAuthUser } from '@/lib/auth';
+import { removeUploadFiles } from '@/lib/uploads';
+
+// Uploading is deliberately open to guests, so deletion is the only check on
+// what ends up in a gallery. Three parties may remove a photo: whoever uploaded
+// it while signed in, the owner of the gallery it sits in, and any admin.
+// A guest upload has no userId, which is exactly why the gallery owner needs
+// this — otherwise nobody could take it down.
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const authUser = await getAuthUser();
+
+    if (!authUser) {
+      return NextResponse.json({ error: 'You must be signed in' }, { status: 401 });
+    }
+
+    const photo = await prisma.photo.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        filename: true,
+        thumbFilename: true,
+        userId: true,
+        gallery: { select: { ownerId: true } },
+      },
+    });
+
+    if (!photo) {
+      return NextResponse.json({ error: 'Photo not found' }, { status: 404 });
+    }
+
+    const isUploader = !!photo.userId && photo.userId === authUser.id;
+    const isGalleryOwner = photo.gallery?.ownerId === authUser.id;
+    const isAdmin = authUser.role === 'ADMIN' || authUser.role === 'SUPER_ADMIN';
+
+    if (!isUploader && !isGalleryOwner && !isAdmin) {
+      return NextResponse.json(
+        { error: 'You do not have permission to delete this photo' },
+        { status: 403 }
+      );
+    }
+
+    // The row goes first: it is what the grid reads, so once it is gone the
+    // photo is gone as far as every caller is concerned.
+    await prisma.photo.delete({ where: { id: photo.id } });
+    await removeUploadFiles([photo.filename, photo.thumbFilename]);
+
+    return NextResponse.json({ success: true, id: photo.id });
+  } catch (error) {
+    console.error('Delete photo error:', error);
+    return NextResponse.json({ error: 'Failed to delete photo' }, { status: 500 });
+  }
+}

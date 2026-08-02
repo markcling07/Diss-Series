@@ -1,4 +1,5 @@
 import UploadForm from '@/components/UploadForm';
+import JoinGalleryForm from '@/components/JoinGalleryForm';
 
 export default function Home() {
   return (
@@ -13,6 +14,10 @@ export default function Home() {
       </section>
 
       <UploadForm />
+
+      {/* The codes are built to be read aloud, so somewhere has to accept one
+          that was. This is where a person who was handed a code lands. */}
+      <JoinGalleryForm />
     </div>
   );
 }
